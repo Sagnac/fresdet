@@ -1,0 +1,10 @@
+name = "fresdet"
+version = "v0.1.0"
+authors = ["Sagnac"]
+uuid = "06536970-5ab0-4446-9835-16abe0ef5a70"
+
+[deps]
+FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
