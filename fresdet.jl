@@ -42,35 +42,34 @@ function fresdet(file)
     t = 25 # text size
     res = (1000, 1000)
     Hfig = Figure(resolution = res)
-    local Haxis
+    fftfig = Figure(resolution = res)
+    Sv = vec(S)
+    n, s6 = stats(Sv)
+    local fftaxis, rect
 
-    # computes the measures and generates the histogram
-    function H(Sv, x, y)
-        n, s6 = stats(Sv)
-        Haxis = GLMakie.Axis(Hfig[1,1], xlabel = "pixel value [0-255]",
-                             ylabel = "pixel count")
-        hist!(Haxis, Sv, bins = n)
-        # abuse the legend since it's easier than making a custom text! box
-        Legend(Hfig[1,1], [MarkerElement(marker = "", color = :transparent)], [s6],
-               "$x x $y", tellwidth = false, tellheight = false, titlesize = t,
-               labelsize = t, halign = :right, valign = :center)
-        DataInspector(Hfig)
+    # compute the measures and generate the histogram
+    Haxis = GLMakie.Axis(Hfig[1,1], title = "$w x $h pixels", titlesize = t,
+                         xlabel = "pixel value [0-255]", ylabel = "pixel count")
+    H = hist!(Haxis, Sv, bins = n, color = RGBf(0, 0.5, 0.8))
+    # abuse the legend since it's easier than making a custom text! box
+    legend = axislegend(Haxis, [MarkerElement(marker = "", color = :transparent)],
+                        [s6], titlesize = t, labelsize = t, position = :rc)
+    DataInspector(Hfig)
+
+    # sets the fft image
+    function I()
+        fftaxis = GLMakie.Axis(fftfig[1,1], aspect = DataAspect(),
+                               title = "Resolution: $w x $h",
+                               titlesize = t, subtitlesize = t)
+        deregister_interaction!(fftaxis, :rectanglezoom)
+        image!(fftaxis, S, colormap = :tokyo, interpolate = false)
+        rect = select_rectangle(fftaxis)
+        DataInspector(fftfig)
         return
     end
 
-    # set the fft image
-    fftfig = Figure(resolution = res)
-    fftaxis = GLMakie.Axis(fftfig[1,1], aspect = DataAspect(),
-                           title = "Resolution: $w x $h",
-                           subtitle = "x-scale: 1, y-scale: 1",
-                           titlesize = t, subtitlesize = t)
-    deregister_interaction!(fftaxis, :rectanglezoom)
-    image!(fftaxis, S, colormap = :tokyo, interpolate = false)
-    rect = select_rectangle(fftaxis)
-    DataInspector(fftfig)
-
     # render
-    H(vec(S), w, h)
+    I()
     set_window_config!(title = "Histogram", focus_on_show = false)
     global Hscreen = display(Hfig)
     set_window_config!(title = "FFT", focus_on_show = true)
@@ -79,7 +78,8 @@ function fresdet(file)
 
     # rectangle selection callback
     R = nothing
-    on(rect) do v
+    local sliderx, slidery, Lx, Ly, xs, ys
+    listen() = on(rect) do v
         # bounds
         x01, y01 = round.(Int, v.origin)
         Lx0, Ly0 = round.(Int, v.widths)
@@ -89,39 +89,73 @@ function fresdet(file)
         x02 = clamp(x02, x01 + 1, w)
         y02 = clamp(y02, y01 + 1, h)
         Lx0, Ly0 = x02 - x01, y02 - y01
-        xs, ys = round.((w / Lx0, h / Ly0); digits = 2)
 
-        R === nothing || delete!(fftaxis, R)
-        # draw rectangle
-        R = lines!(fftaxis, Rect(x01, y01, Lx0, Ly0), linestyle = :dot,
-                   color = RGBf(0, 1, 0.38), linewidth = 7)
-        fftaxis.title = "Effective Resolution: $Lx0 x $Ly0"
-        fftaxis.subtitle = "x-scale: $xs, y-scale: $ys"
-        println("\nEffective Resolution: $Lx0 x $Ly0")
-        println("x-scale: $xs\ny-scale: $ys")
+        # sliders
+        if R === nothing
+            sliderx = IntervalSlider(fftfig[2,1], range = 0:w,
+                                     startvalues = (x01, x02), snap = false)
+            slidery = IntervalSlider(fftfig[1,2], range = 0:h,
+                                     startvalues = (y01, y02), snap = false,
+                                     horizontal = false)
+            x1 = @lift(clamp($(sliderx.interval)[1], 0, w - 1))
+            x2 = @lift(clamp($(sliderx.interval)[2], $x1 + 1, w))
+            y1 = @lift(clamp($(slidery.interval)[1], 0, h - 1))
+            y2 = @lift(clamp($(slidery.interval)[2], $y1 + 1, h))
+            Lx, Ly = @lift($x2 - $x1), @lift($y2 - $y1)
+            A = @lift($Lx * $Ly)
 
-        # wipe the figure to clear the legend and recreate the axis
-        empty!(Haxis)
-        empty!(Hfig)
-        ss = S[x01+1:x02, y01+1:y02]
-        H(vec(ss), Lx0, Ly0)
+            # draw rectangle
+            r4 = @lift(Rect($x1, $y1, $Lx, $Ly))
+            R = lines!(fftaxis, r4, linestyle = :dot,
+                       color = RGBf(0, 1, 0.38), linewidth = 7)
 
-        # erase the lines if the histogram window closes
-        on(events(Hfig).window_open) do Hwindow
-            if !Hwindow && events(fftfig).window_open[]
-                delete!(fftaxis, R)
-                fftaxis.title = "Resolution: $w x $h"
-                fftaxis.subtitle = "x-scale: 1, y-scale: 1"
-                R = nothing
+            # create new histogram on selection
+            Sv = @lift(vec(S[$x1+1:$x2, $y1+1:$y2]))
+            delete!(Haxis, H)
+            H = hist!(Haxis, Sv, color = RGBf(0, 0.5, 0.8))
+
+            # interval change callback
+            on(A; update = true) do _
+                xs, ys = round.((w / Lx[], h / Ly[]); digits = 2)
+                fftaxis.title = "Effective Resolution: $(Lx[]) x $(Ly[])"
+                fftaxis.subtitle = "x-scale: $xs, y-scale: $ys"
+                H.bins, legend.entrygroups[][1][2][1].label = stats(Sv[])
+                Haxis.title = "$(Lx[]) x $(Ly[]) pixels"
+                reset_limits!(Haxis)
+                nothing
             end
-            nothing
+
+        else
+
+            set_close_to!(sliderx, x01, x02)
+            sliderx.startvalues = (x01, x02)
+            set_close_to!(slidery, y01, y02)
+            slidery.startvalues = (y01, y02)
+
         end
+
+        println("\nEffective Resolution: $(Lx[]) x $(Ly[])")
+        println("x-scale: $xs\ny-scale: $ys")
 
         # re-open the histogram/stats window on request
         !events(Hfig).window_open[] && (Hscreen = display(Hfig))
 
         nothing
 
+    end
+
+    listen()
+
+    # erase the lines and remove the sliders if the histogram window closes
+    on(events(Hfig).window_open) do Hwindow
+        if !Hwindow && events(fftfig).window_open[] && R !== nothing
+            empty!(fftaxis)
+            empty!(fftfig)
+            I()
+            listen()
+            R = nothing
+        end
+        nothing
     end
 
     # script support
