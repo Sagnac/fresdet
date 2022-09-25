@@ -2,7 +2,7 @@
 
 Simple analysis tool for estimating the original resolution of standard upscaled images using ffts and basic statistical metrics.
 
-![FFT.png](FFT.png) ![Histogram.png](Histogram.png)
+<img src="https://raw.githubusercontent.com/Sagnac/fresdet/master/images/FFT.png" alt="FFT.png" width="48%"/> <img src="https://raw.githubusercontent.com/Sagnac/fresdet/master/images/Histogram.png" alt="Histogram.png" width="48%"/>
 
 ----
 
