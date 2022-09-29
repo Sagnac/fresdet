@@ -125,6 +125,15 @@ function fresdet(file)
                 nothing
             end
 
+            # add center button
+            centre = Button(fftfig[2,2], label = "Center", textsize = 0.76t)
+            on(centre.clicks) do _
+                x1c = div(w, 2) - div(Lx[], 2)
+                y1c = div(h, 2) - div(Ly[], 2)
+                set_close_to!(sliderx, x1c, x1c + Lx[])
+                set_close_to!(slidery, y1c, y1c + Ly[])
+            end
+
         else
 
             set_close_to!(sliderx, x01, x02)
