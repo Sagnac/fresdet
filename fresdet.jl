@@ -79,6 +79,7 @@ function fresdet(file)
     # rectangle selection callback
     R = nothing
     local sliderx, slidery, Lx, Ly, xs, ys
+    local Lxp, x1p, x2p, Lyp, y1p, y2p, AR, f1, f2, of1, of2
     listen() = on(rect) do v
         # bounds
         x01, y01 = round.(Int, v.origin)
@@ -132,14 +133,90 @@ function fresdet(file)
                 y1c = div(h, 2) - div(Ly[], 2)
                 set_close_to!(sliderx, x1c, x1c + Lx[])
                 set_close_to!(slidery, y1c, y1c + Ly[])
+                x1p, x2p = x1[], x2[]
+                y1p, y2p = y1[], y2[]
+                nothing
+            end
+
+            # slider callback functions under lock
+            function f1(x)
+                off(of1)
+                Δx = Lx[] - Lxp
+                if Δx != 0
+                    set_close_to!(sliderx, x1p - x[2] + x2p, x[2])
+                    if ylock.active[]
+                        Δy = Int(div(Lx[] / AR - Lyp, 2))
+                        set_close_to!(slidery, y1p - Δy, y2p + Δy)
+                    else
+                        AR = Lx[] / Ly[]
+                    end
+                end
+                Lxp, x1p, x2p = Lx[], x1[], x2[]
+                Lyp, y1p, y2p = Ly[], y1[], y2[]
+                of1 = on(f1, sliderx.interval)
+                return
+            end
+
+            function f2(y)
+                off(of2)
+                Δy = Ly[] - Lyp
+                if Δy != 0
+                    set_close_to!(slidery, y1p - y[2] + y2p, y[2])
+                    if xlock.active[]
+                        Δx = Int(div(Ly[] * AR - Lxp, 2))
+                        set_close_to!(sliderx, x1p - Δx, x2p + Δx)
+                    else
+                        AR = Lx[] / Ly[]
+                    end
+                end
+                Lyp, y1p, y2p = Ly[], y1[], y2[]
+                Lxp, x1p, x2p = Lx[], x1[], x2[]
+                of2 = on(f2, slidery.interval)
+                return
+            end
+
+            # set lock toggles
+            xlock, ylock = [Toggle(fftfig[i+2,2]) for i in 1:2]
+            [Label(fftfig[i+2,1], s, halign = :right, tellwidth = false,
+             textsize = 0.76t) for (i, s) in pairs(("Lock X", "Lock Y"))]
+
+            on(xlock.active) do active
+                if active
+                    Lxp, x1p, x2p = Lx[], x1[], x2[]
+                    Lyp, y1p, y2p = Ly[], y1[], y2[]
+                    AR = Lx[] / Ly[]
+                    of1 = on(f1, sliderx.interval)
+                else
+                    off(of1)
+                end
+                nothing
+            end
+
+            on(ylock.active) do active
+                if active
+                    Lxp, x1p, x2p = Lx[], x1[], x2[]
+                    Lyp, y1p, y2p = Ly[], y1[], y2[]
+                    AR = Lx[] / Ly[]
+                    of2 = on(f2, slidery.interval)
+                else
+                    off(of2)
+                end
+                nothing
             end
 
         else
 
+            @isdefined(of1) && (flag1 = off(of1))
+            @isdefined(of2) && (flag2 = off(of2))
             set_close_to!(sliderx, x01, x02)
             sliderx.startvalues = (x01, x02)
             set_close_to!(slidery, y01, y02)
             slidery.startvalues = (y01, y02)
+            Lxp, x1p, x2p = Lx[], x01, x02
+            Lyp, y1p, y2p = Ly[], y01, y02
+            AR = Lx[] / Ly[]
+            @isdefined(flag1) && flag1 && (of1 = on(f1, sliderx.interval))
+            @isdefined(flag2) && flag2 && (of2 = on(f2, slidery.interval))
 
         end
 
