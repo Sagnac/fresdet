@@ -103,28 +103,32 @@ function fresdet(file)
             y1 = @lift(clamp($(slidery.interval)[1], 0, h - 1))
             y2 = @lift(clamp($(slidery.interval)[2], $y1 + 1, h))
             Lx, Ly = @lift($x2 - $x1), @lift($y2 - $y1)
-            A = @lift($Lx * $Ly)
 
             # draw rectangle
             r4 = @lift(Rect($x1, $y1, $Lx, $Ly))
             R = lines!(fftaxis, r4, linestyle = :dot,
                        color = RGBf(0, 1, 0.38), linewidth = 7)
 
+            # set attribute observables
+            xs, ys = [@lift(round.((w / $Lx, h / $Ly); digits = 2)[i]) for i in 1:2]
+            connect!(fftaxis.title, @lift("Effective Resolution: $($Lx) x $($Ly)"))
+            connect!(fftaxis.subtitle, @lift("x-scale: $($xs), y-scale: $($ys)"))
+
             # create new histogram on selection
             Sv = @lift(vec(S[$x1+1:$x2, $y1+1:$y2]))
             delete!(Haxis, H)
             H = hist!(Haxis, Sv, color = RGBf(0, 0.5, 0.8))
 
-            # interval change callback
-            on(A; update = true) do _
-                xs, ys = round.((w / Lx[], h / Ly[]); digits = 2)
-                fftaxis.title = "Effective Resolution: $(Lx[]) x $(Ly[])"
-                fftaxis.subtitle = "x-scale: $xs, y-scale: $ys"
+            # interval change callback for related histogram attributes
+            function refresh(_...)
                 H.bins, legend.entrygroups[][1][2][1].label = stats(Sv[])
                 Haxis.title = "$(Lx[]) x $(Ly[]) pixels"
                 reset_limits!(Haxis)
-                nothing
+                return
             end
+
+            onany(refresh, sliderx.interval, slidery.interval)
+            refresh()
 
             # add center button
             centre = Button(fftfig[2,2], label = "Center", textsize = 0.76t)
@@ -221,7 +225,7 @@ function fresdet(file)
         end
 
         println("\nEffective Resolution: $(Lx[]) x $(Ly[])")
-        println("x-scale: $xs\ny-scale: $ys")
+        println("x-scale: $(xs[])\ny-scale: $(ys[])")
 
         # re-open the histogram/stats window on request
         !events(Hfig).window_open[] && (Hscreen = display(Hfig))
