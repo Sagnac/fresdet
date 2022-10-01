@@ -50,6 +50,7 @@ function fresdet(file)
     # compute the measures and generate the histogram
     Haxis = GLMakie.Axis(Hfig[1,1], title = "$w x $h pixels", titlesize = t,
                          xlabel = "pixel value [0-255]", ylabel = "pixel count")
+    deregister_interaction!(Haxis, :rectanglezoom)
     H = hist!(Haxis, Sv, bins = n, color = RGBf(0, 0.5, 0.8))
     # abuse the legend since it's easier than making a custom text! box
     legend = axislegend(Haxis, [MarkerElement(marker = "", color = :transparent)],
@@ -78,7 +79,7 @@ function fresdet(file)
 
     # rectangle selection callback
     R = nothing
-    local sliderx, slidery, Lx, Ly, xs, ys
+    local sliderx, slidery, Lx, Ly, xs, ys, Svs, H2, refresh, status, HGrid
     local Lxp, x1p, x2p, Lyp, y1p, y2p, AR, f1, f2, of1, of2
     listen() = on(rect) do v
         # bounds
@@ -116,18 +117,22 @@ function fresdet(file)
 
             # create new histogram on selection
             Sv = @lift(vec(S[$x1+1:$x2, $y1+1:$y2]))
+            Svs = Observable(Sv[])
+            link = @lift($Svs == $Sv ? "\u2713" : "")
+            !@isdefined(status) ? (status = link) : connect!(status, link)
             delete!(Haxis, H)
-            H = hist!(Haxis, Sv, color = RGBf(0, 0.5, 0.8))
+            H = hist!(Haxis, Svs, color = RGBf(0, 0.5, 0.8))
 
             # interval change callback for related histogram attributes
             function refresh(_...)
+                Svs[] = Sv[]
                 H.bins, legend.entrygroups[][1][2][1].label = stats(Sv[])
+                @isdefined(H2) && (H2.bins[] = H.bins[])
                 Haxis.title = "$(Lx[]) x $(Ly[]) pixels"
                 reset_limits!(Haxis)
                 return
             end
 
-            onany(refresh, sliderx.interval, slidery.interval)
             refresh()
 
             # add center button
@@ -216,6 +221,7 @@ function fresdet(file)
             sliderx.startvalues = (x01, x02)
             set_close_to!(slidery, y01, y02)
             slidery.startvalues = (y01, y02)
+            refresh()
             Lxp, x1p, x2p = Lx[], x01, x02
             Lyp, y1p, y2p = Ly[], y01, y02
             AR = Lx[] / Ly[]
@@ -224,14 +230,50 @@ function fresdet(file)
 
         end
 
-        println("\nEffective Resolution: $(Lx[]) x $(Ly[])")
-        println("x-scale: $(xs[])\ny-scale: $(ys[])")
+        # add interactive elements to histogram
+        if !@isdefined(HGrid)
+            HGrid = Hfig[1,1] = GridLayout(tellwidth = false, tellheight = false,
+                                           valign = :top, halign = :right)
+            HGrid[1,1] = Label(Hfig, "")
+            HGrid[2,1] = Label(Hfig, "Live", textsize = t)
+            HGrid[2,2] = live = Toggle(Hfig)
+            HGrid[3,1] = Label(Hfig, status, textsize = 2t)
+            HGrid[3,2] = update = Button(Hfig, label = "Update", textsize = t)
+            HGrid[3,3] = Label(Hfig, "")
+
+            local ov2
+
+            on(update.clicks) do _
+                refresh()
+                info()
+                nothing
+            end
+
+            on(live.active) do active
+                if active
+                    delete!(Haxis, H)
+                    H2 = hist!(Haxis, Sv, color = RGBf(0, 0.8, 0.3))
+                    ov2 = onany(refresh, sliderx.interval, slidery.interval)
+                else
+                    delete!(Haxis, H2)
+                    H = hist!(Haxis, Svs, color = RGBf(0, 0.5, 0.8))
+                    off.(ov2)
+                end
+                refresh()
+            end
+        end
 
         # re-open the histogram/stats window on request
         !events(Hfig).window_open[] && (Hscreen = display(Hfig))
 
-        nothing
+        info()
 
+    end
+
+    function info()
+        println("\nEffective Resolution: $(Lx[]) x $(Ly[])")
+        println("x-scale: $(xs[])\ny-scale: $(ys[])")
+        return
     end
 
     listen()
