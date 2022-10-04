@@ -80,7 +80,7 @@ function fresdet(file)
     # rectangle selection callback
     R = nothing
     local sliderx, slidery, Lx, Ly, xs, ys, Svs, H2, refresh, status, HGrid
-    local Lxp, x1p, x2p, Lyp, y1p, y2p, AR, f1, f2, of1, of2
+    local Lxp, xc, Lyp, yc, AR, f1, f2, of1, of2
     listen() = on(rect) do v
         # bounds
         x01, y01 = round.(Int, v.origin)
@@ -142,44 +142,46 @@ function fresdet(file)
                 y1c = div(h, 2) - div(Ly[], 2)
                 set_close_to!(sliderx, x1c, x1c + Lx[])
                 set_close_to!(slidery, y1c, y1c + Ly[])
-                x1p, x2p = x1[], x2[]
-                y1p, y2p = y1[], y2[]
+                xc = x1[] + div(Lx[], 2)
+                yc = y1[] + div(Ly[], 2)
                 nothing
             end
 
             # slider callback functions under lock
             function f1(x)
                 off(of1)
-                Δx = Lx[] - Lxp
-                if Δx != 0
-                    set_close_to!(sliderx, x1p - x[2] + x2p, x[2])
+                if Lx[] != Lxp
+                    set_close_to!(sliderx, 2 * xc - x[2], x[2])
                     if ylock.active[]
-                        Δy = Int(div(Lx[] / AR - Lyp, 2))
-                        set_close_to!(slidery, y1p - Δy, y2p + Δy)
+                        Δy = Int(div(Lx[] / AR, 2))
+                        off(of2)
+                        set_close_to!(slidery, yc - Δy, yc + Δy)
+                        of2 = on(f2, slidery.interval)
                     else
                         AR = Lx[] / Ly[]
                     end
                 end
-                Lxp, x1p, x2p = Lx[], x1[], x2[]
-                Lyp, y1p, y2p = Ly[], y1[], y2[]
+                Lxp, xc = Lx[], x1[] + div(Lx[], 2)
+                Lyp, yc = Ly[], y1[] + div(Ly[], 2)
                 of1 = on(f1, sliderx.interval)
                 return
             end
 
             function f2(y)
                 off(of2)
-                Δy = Ly[] - Lyp
-                if Δy != 0
-                    set_close_to!(slidery, y1p - y[2] + y2p, y[2])
+                if Ly[] != Lyp
+                    set_close_to!(slidery, 2 * yc - y[2], y[2])
                     if xlock.active[]
-                        Δx = Int(div(Ly[] * AR - Lxp, 2))
-                        set_close_to!(sliderx, x1p - Δx, x2p + Δx)
+                        Δx = Int(div(Ly[] * AR, 2))
+                        off(of1)
+                        set_close_to!(sliderx, xc - Δx, xc + Δx)
+                        of1 = on(f1, sliderx.interval)
                     else
                         AR = Lx[] / Ly[]
                     end
                 end
-                Lyp, y1p, y2p = Ly[], y1[], y2[]
-                Lxp, x1p, x2p = Lx[], x1[], x2[]
+                Lxp, xc = Lx[], x1[] + div(Lx[], 2)
+                Lyp, yc = Ly[], y1[] + div(Ly[], 2)
                 of2 = on(f2, slidery.interval)
                 return
             end
@@ -191,8 +193,8 @@ function fresdet(file)
 
             on(xlock.active) do active
                 if active
-                    Lxp, x1p, x2p = Lx[], x1[], x2[]
-                    Lyp, y1p, y2p = Ly[], y1[], y2[]
+                    Lxp, xc = Lx[], x1[] + div(Lx[], 2)
+                    Lyp, yc = Ly[], y1[] + div(Ly[], 2)
                     AR = Lx[] / Ly[]
                     of1 = on(f1, sliderx.interval)
                 else
@@ -203,8 +205,8 @@ function fresdet(file)
 
             on(ylock.active) do active
                 if active
-                    Lxp, x1p, x2p = Lx[], x1[], x2[]
-                    Lyp, y1p, y2p = Ly[], y1[], y2[]
+                    Lxp, xc = Lx[], x1[] + div(Lx[], 2)
+                    Lyp, yc = Ly[], y1[] + div(Ly[], 2)
                     AR = Lx[] / Ly[]
                     of2 = on(f2, slidery.interval)
                 else
@@ -222,8 +224,8 @@ function fresdet(file)
             set_close_to!(slidery, y01, y02)
             slidery.startvalues = (y01, y02)
             refresh()
-            Lxp, x1p, x2p = Lx[], x01, x02
-            Lyp, y1p, y2p = Ly[], y01, y02
+            Lxp, xc = Lx[], x01 + div(Lx[], 2)
+            Lyp, yc = Ly[], y01 + div(Ly[], 2)
             AR = Lx[] / Ly[]
             @isdefined(flag1) && flag1 && (of1 = on(f1, sliderx.interval))
             @isdefined(flag2) && flag2 && (of2 = on(f2, slidery.interval))
