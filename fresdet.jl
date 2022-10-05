@@ -79,8 +79,8 @@ function fresdet(file)
 
     # rectangle selection callback
     R = nothing
-    local sliderx, slidery, Lx, Ly, xs, ys, Svs, H2, refresh, status, HGrid
-    local Lxp, xc, Lyp, yc, AR, f1, f2, of1, of2
+    local sliderx, slidery, Lx, Ly, xs, ys, Svs, H2, refresh, status, HGrid, live
+    local Lxp, xc, Lyp, yc, AR, f1, f2, of1, of2, ov2
     listen() = on(rect) do v
         # bounds
         x01, y01 = round.(Int, v.origin)
@@ -120,8 +120,14 @@ function fresdet(file)
             Svs = Observable(Sv[])
             link = @lift($Svs == $Sv ? "\u2713" : "")
             !@isdefined(status) ? (status = link) : connect!(status, link)
-            delete!(Haxis, H)
-            H = hist!(Haxis, Svs, color = RGBf(0, 0.5, 0.8))
+            if !@isdefined(live) || !live.active[]
+                delete!(Haxis, H)
+                H = hist!(Haxis, Svs, color = RGBf(0, 0.5, 0.8))
+            else
+                delete!(Haxis, H2)
+                H2 = hist!(Haxis, Sv, color = RGBf(0, 0.8, 0.3))
+                ov2 = onany(refresh, sliderx.interval, slidery.interval)
+            end
 
             # interval change callback for related histogram attributes
             function refresh(_...)
@@ -242,8 +248,6 @@ function fresdet(file)
             HGrid[3,1] = Label(Hfig, status, textsize = 2t)
             HGrid[3,2] = update = Button(Hfig, label = "Update", textsize = t)
             HGrid[3,3] = Label(Hfig, "")
-
-            local ov2
 
             on(update.clicks) do _
                 refresh()
