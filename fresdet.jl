@@ -80,7 +80,7 @@ function fresdet(file)
     # rectangle selection callback
     R = nothing
     local sliderx, slidery, Lx, Ly, xs, ys, Svs, H2, refresh, status, HGrid, live
-    local Lxp, xc, Lyp, yc, AR, f1, f2, of1, of2, ov2
+    local Lxp, xc, Lyp, yc, AR, f1, f2, of1, of2, ov, Svlt
     listen() = on(rect) do v
         # bounds
         x01, y01 = round.(Int, v.origin)
@@ -124,6 +124,7 @@ function fresdet(file)
                 nothing
             end
             Svs = Observable(Sv[])
+            Svlt = Makie.async_latest(Sv, 1)
             link = @lift($Svs == $Sv ? "\u2713" : "")
             !@isdefined(status) ? (status = link) : connect!(status, link)
             if !@isdefined(live) || !live.active[]
@@ -131,8 +132,8 @@ function fresdet(file)
                 H = hist!(Haxis, Svs, color = RGBf(0, 0.5, 0.8))
             else
                 delete!(Haxis, H2)
-                H2 = hist!(Haxis, Sv, color = RGBf(0, 0.8, 0.3))
-                ov2 = onany(refresh, sliderx.interval, slidery.interval)
+                H2 = hist!(Haxis, Svlt, color = RGBf(0, 0.8, 0.3))
+                ov = on(refresh, Svlt)
             end
 
             # interval change callback for related histogram attributes
@@ -264,12 +265,12 @@ function fresdet(file)
             on(live.active) do active
                 if active
                     delete!(Haxis, H)
-                    H2 = hist!(Haxis, Sv, color = RGBf(0, 0.8, 0.3))
-                    ov2 = onany(refresh, sliderx.interval, slidery.interval)
+                    H2 = hist!(Haxis, Svlt, color = RGBf(0, 0.8, 0.3))
+                    ov = on(refresh, Svlt)
                 else
                     delete!(Haxis, H2)
                     H = hist!(Haxis, Svs, color = RGBf(0, 0.5, 0.8))
-                    off.(ov2)
+                    off(ov)
                 end
                 refresh()
             end
