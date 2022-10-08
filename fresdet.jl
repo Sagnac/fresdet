@@ -44,7 +44,7 @@ function fresdet(file)
     Hfig = Figure(resolution = res)
     fftfig = Figure(resolution = res)
     Sv = vec(S)
-    n, s6 = stats(Sv)
+    n, s6 = Observable.(stats(Sv))
     local fftaxis, rect
 
     # compute the measures and generate the histogram
@@ -54,7 +54,7 @@ function fresdet(file)
     H = hist!(Haxis, Sv, bins = n, color = RGBf(0, 0.5, 0.8))
     # abuse the legend since it's easier than making a custom text! box
     legend = axislegend(Haxis, [MarkerElement(marker = "", color = :transparent)],
-                        [s6], titlesize = t, labelsize = t, position = :rc)
+                        [s6[]], titlesize = t, labelsize = t, position = :rc)
     DataInspector(Hfig)
 
     # sets the fft image
@@ -80,7 +80,7 @@ function fresdet(file)
     # rectangle selection callback
     R = nothing
     local sliderx, slidery, Lx, Ly, xs, ys, Svs, H2, refresh, status, HGrid, live
-    local Lxp, xc, Lyp, yc, AR, f1, f2, arlock, of1, of2, ov, Svlt
+    local Lxp, xc, Lyp, yc, AR, f1, f2, arlock, of1, of2, ov, Svlt, static, dynamic
     listen() = on(rect) do v
         # bounds
         x01, y01 = round.(Int, v.origin)
@@ -149,24 +149,23 @@ function fresdet(file)
                 end
                 nothing
             end
-            Svs = Observable(Sv[])
-            Svlt = Makie.async_latest(Sv, 1)
-            link = @lift($Svs == $Sv ? "\u2713" : "")
+            Svs = [async_latest(Sv, 1), Observable(Sv[])]
+            Svlt = Observable([0.0])
+            static = connect!(Svlt, Svs[2])
+            connect!(legend.entrygroups[][1][2][1].label, s6)
+            link = @lift($(Svs[1]) == $Svlt ? "\u2713" : "")
             !@isdefined(status) ? (status = link) : connect!(status, link)
-            if !@isdefined(live) || !live.active[]
-                delete!(Haxis, H)
-                H = hist!(Haxis, Svs, color = RGBf(0, 0.5, 0.8))
-            else
-                delete!(Haxis, H2)
-                H2 = hist!(Haxis, Svlt, color = RGBf(0, 0.8, 0.3))
+            delete!(Haxis, H)
+            H = hist!(Haxis, Svlt, bins = n, color = RGBf(0, 0.5, 0.8))
+            if @isdefined(live) && live.active[]
+                dynamic = connect!(Svlt, Svs[1])
+                H.color[] = RGBf(0, 0.8, 0.3)
                 ov = on(refresh, Svlt)
             end
 
-            # interval change callback for related histogram attributes
-            function refresh(_...)
-                Svs[] = Sv[]
-                H.bins, legend.entrygroups[][1][2][1].label = stats(Sv[])
-                @isdefined(H2) && (H2.bins[] = H.bins[])
+            # update callback for histogram attributes
+            function refresh(Svlt = Sv[])
+                n[], s6[] = stats(Svlt)
                 Haxis.title = "$(Lx[]) x $(Ly[]) pixels"
                 reset_limits!(Haxis)
                 return
@@ -222,6 +221,7 @@ function fresdet(file)
             yc[] = y01 + div(Ly0, 2)
             set_close_to!(slidery, Ly0)
             AR = Lx[] / Ly[]
+            Svs[2][] = Sv[]
             refresh()
             if arlock.active[]
                 of1 = on(f1, Lx)
@@ -242,6 +242,7 @@ function fresdet(file)
             HGrid[3,3] = Label(Hfig, "")
 
             on(update.clicks) do _
+                Svs[2][] = Sv[]
                 refresh()
                 info()
                 nothing
@@ -249,16 +250,20 @@ function fresdet(file)
 
             on(live.active) do active
                 if active
-                    delete!(Haxis, H)
-                    H2 = hist!(Haxis, Svlt, color = RGBf(0, 0.8, 0.3))
+                    off(static)
+                    dynamic = connect!(Svlt, Svs[1])
+                    H.color[] = RGBf(0, 0.8, 0.3)
                     ov = on(refresh, Svlt)
                 else
-                    delete!(Haxis, H2)
-                    H = hist!(Haxis, Svs, color = RGBf(0, 0.5, 0.8))
                     off(ov)
+                    off(dynamic)
+                    Svs[2][] = Sv[]
+                    static = connect!(Svlt, Svs[2])
+                    H.color[] = RGBf(0, 0.5, 0.8)
                 end
                 refresh()
             end
+
         end
 
         # re-open the histogram/stats window on request
