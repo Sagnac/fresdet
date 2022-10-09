@@ -80,7 +80,7 @@ function fresdet(file)
     # rectangle selection callback
     R = nothing
     local sliderx, slidery, Lx, Ly, xs, ys, Svs, H2, refresh, status, HGrid, live
-    local Lxp, xc, Lyp, yc, AR, f1, f2, arlock, of1, of2, ov, Svlt, static, dynamic
+    local Lxp, xc, Lyp, yc, AR, f1, f2, arlock, of1, of2, Svlt, static, dynamic
     listen() = on(rect) do v
         # bounds
         x01, y01 = round.(Int, v.origin)
@@ -149,7 +149,7 @@ function fresdet(file)
                 end
                 nothing
             end
-            Svs = [async_latest(Sv, 1), Observable(Sv[])]
+            Svs = [Makie.async_latest(Sv, 1), Observable(Sv[])]
             Svlt = Observable([0.0])
             static = connect!(Svlt, Svs[2])
             connect!(legend.entrygroups[][1][2][1].label, s6)
@@ -172,6 +172,7 @@ function fresdet(file)
             end
 
             refresh()
+            on(refresh, Svlt)
 
             # add center button
             centre = Button(fftfig[2,2], label = "Center", textsize = 0.76t)
@@ -243,7 +244,6 @@ function fresdet(file)
 
             on(update.clicks) do _
                 Svs[2][] = Sv[]
-                refresh()
                 info()
                 nothing
             end
@@ -253,9 +253,7 @@ function fresdet(file)
                     off(static)
                     dynamic = connect!(Svlt, Svs[1])
                     H.color[] = RGBf(0, 0.8, 0.3)
-                    ov = on(refresh, Svlt)
                 else
-                    off(ov)
                     off(dynamic)
                     Svs[2][] = Sv[]
                     static = connect!(Svlt, Svs[2])
