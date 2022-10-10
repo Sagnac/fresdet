@@ -45,6 +45,7 @@ function fresdet(file)
     fftfig = Figure(resolution = res)
     Sv = vec(S)
     n, s6 = stats(Sv)
+    n = Observable(n)
     local fftaxis, rect
 
     # compute the measures and generate the histogram
@@ -79,7 +80,7 @@ function fresdet(file)
 
     # rectangle selection callback
     R = nothing
-    local sliderx, slidery, Lx, Ly, xs, ys, Svs, H2, refresh, status, HGrid, live
+    local sliderx, slidery, Lx, Ly, xs, ys, Svs, refresh, status, HGrid, live
     local Lxp, xc, Lyp, yc, AR, f1, f2, arlock, of1, of2, ov, Svlt
     listen() = on(rect) do v
         # bounds
@@ -151,22 +152,21 @@ function fresdet(file)
             end
             Svs = Observable(Sv[])
             Svlt = Makie.async_latest(Sv, 1)
-            link = @lift($Svs == $Sv ? "\u2713" : "")
-            !@isdefined(status) ? (status = link) : connect!(status, link)
+            if @isdefined(status)
+                link = @lift($(live.active) || $Svs == $Sv ? "\u2713" : "")
+                connect!(status, link)
+            end
+            delete!(Haxis, H)
             if !@isdefined(live) || !live.active[]
-                delete!(Haxis, H)
-                H = hist!(Haxis, Svs, color = RGBf(0, 0.5, 0.8))
+                H = hist!(Haxis, Svs, bins = n, color = RGBf(0, 0.5, 0.8))
             else
-                delete!(Haxis, H2)
-                H2 = hist!(Haxis, Svlt, color = RGBf(0, 0.8, 0.3))
+                H = hist!(Haxis, Svlt, bins = n, color = RGBf(0, 0.8, 0.3))
                 ov = on(refresh, Svlt)
             end
 
             # interval change callback for related histogram attributes
-            function refresh(_...)
-                Svs[] = Sv[]
-                H.bins, legend.entrygroups[][1][2][1].label = stats(Sv[])
-                @isdefined(H2) && (H2.bins[] = H.bins[])
+            function refresh(Svlt = Sv[])
+                n[], legend.entrygroups[][1][2][1].label[] = stats(Svlt)
                 Haxis.title = "$(Lx[]) x $(Ly[]) pixels"
                 reset_limits!(Haxis)
                 return
@@ -222,6 +222,7 @@ function fresdet(file)
             yc[] = y01 + div(Ly0, 2)
             set_close_to!(slidery, Ly0)
             AR = Lx[] / Ly[]
+            Svs[] = Sv[]
             refresh()
             if arlock.active[]
                 of1 = on(f1, Lx)
@@ -237,25 +238,27 @@ function fresdet(file)
             HGrid[1,1] = Label(Hfig, "")
             HGrid[2,1] = Label(Hfig, "Live", textsize = t)
             HGrid[2,2] = live = Toggle(Hfig)
+            status = @lift($(live.active) || $Svs == $Sv ? "\u2713" : "")
             HGrid[3,1] = Label(Hfig, status, textsize = 2t)
             HGrid[3,2] = update = Button(Hfig, label = "Update", textsize = t)
             HGrid[3,3] = Label(Hfig, "")
 
             on(update.clicks) do _
+                Svs[] = Sv[]
                 refresh()
                 info()
                 nothing
             end
 
             on(live.active) do active
+                delete!(Haxis, H)
                 if active
-                    delete!(Haxis, H)
-                    H2 = hist!(Haxis, Svlt, color = RGBf(0, 0.8, 0.3))
+                    H = hist!(Haxis, Svlt, bins = n, color = RGBf(0, 0.8, 0.3))
                     ov = on(refresh, Svlt)
                 else
-                    delete!(Haxis, H2)
-                    H = hist!(Haxis, Svs, color = RGBf(0, 0.5, 0.8))
                     off(ov)
+                    H = hist!(Haxis, Svs, bins = n, color = RGBf(0, 0.5, 0.8))
+                    Svs[] = Sv[]
                 end
                 refresh()
             end
