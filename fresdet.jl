@@ -145,8 +145,8 @@ function fresdet(file)
             # create new histogram on selection
             Sv = @lift(vec(S[$x1+1:$x2, $y1+1:$y2]))
             on(Sv) do vs
-                if length(vs) === 1
-                    push!(Sv[], vs[1] + 1)
+                if allequal(vs)
+                    push!(Sv[], isempty(vs) ? 0 : vs[1] + 1)
                 end
                 nothing
             end
