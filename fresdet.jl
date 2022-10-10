@@ -106,7 +106,7 @@ function fresdet(file)
 
             function xpoints(xc, Lx)
                 if xc > div(w, 2)
-                    x2 = clamp(xc + div(Lx, 2), xc + 1, w)
+                    x2 = clamp(xc + cld(Lx, 2), xc + 1, w)
                     x1 = x2 - Lx
                 else
                     x1 = clamp(xc - div(Lx, 2), 0, xc)
@@ -120,7 +120,7 @@ function fresdet(file)
 
             function ypoints(yc, Ly)
                 if yc > div(h, 2)
-                    y2 = clamp(yc + div(Ly, 2), yc + 1, h)
+                    y2 = clamp(yc + cld(Ly, 2), yc + 1, h)
                     y1 = y2 - Ly
                 else
                     y1 = clamp(yc - div(Ly, 2), 0, yc)
