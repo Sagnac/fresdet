@@ -2,7 +2,7 @@
 
 Simple analysis tool for estimating the original resolution of standard upscaled images using ffts and basic statistical metrics.
 
-<img src="https://raw.githubusercontent.com/Sagnac/fresdet/master/images/FFT.png" alt="FFT.png" width="48%"/> <img src="https://raw.githubusercontent.com/Sagnac/fresdet/master/images/Histogram.png" alt="Histogram.png" width="48%"/>
+![fresdet.png](images/fresdet.png)
 
 ----
 
@@ -32,12 +32,15 @@ include("fresdet.jl")
 fresdet("image.png");
 ```
 
-Calling fresdet returns three values: the histogram figure, the fft figure, and the fft matrix allowing you to save three figures:
+Calling fresdet returns two values:
+* The figure containing both histogram and fft images;
+* The fft matrix.
+
+This allows you to save two figures:
 ```
-HTG, FFT, M = fresdet("image.png");
-save("Histogram.png", HTG)
-save("FFT.png", FFT)
-savefft("barefft.png", M) # saves the fft without the axis in its original size
+fig, S = fresdet("image.png");
+save("fresdet.png", fig) # saves the figure in its current state
+savefft("barefft.png", S) # saves the fft without the axis in its original size
 ```
 
 Alternatively, you can run the program as a script, passing the image as an argument:
@@ -45,12 +48,19 @@ Alternatively, you can run the program as a script, passing the image as an argu
 julia fresdet.jl image.png
 ```
 
-If you don't want to wait for the packages to load (Julia is a JIT compiled language so loading some packages like GLMakie can be slow) or the first plot latency you can create a custom sysimage with the PackageCompiler.jl package which will precompile all of the necessary functions and speed things up. A precompilation script is provided in [precompile_fresdet.jl](precompile_fresdet.jl). Note that this sysimage can be quite large in size, but at the moment there isn't a way to provide a small relocatable binary of the program which works across all operating systems.
+If you don't want to wait for the packages to load (Julia is a JIT compiled language so loading some packages like GLMakie can be slow) or the first plot latency you can create a custom sysimage with the PackageCompiler.jl package which will precompile all of the necessary functions and speed things up. A precompilation script is provided in [precompile.jl](precompile.jl). Note that this sysimage can be quite large in size, but at the moment there isn't a way to provide a small relocatable binary of the program which works across all operating systems.
 
 ----
 
 ## Using the program
 
-If the image has been significantly upsized it will be immediately apparent on the fft as many of the high frequency pixels away from the center will have values close to zero. Clicking and dragging on the fft figure will allow you to select an area which should correspond to the bandwidth of the original image in each direction. The dimensions of this rectangle as well as the scaling factors in both directions will be printed. If well selected, the dimensions of the rectangle should correspond to the original resolution of the resized image and the scaling factors will tell you by how much the image has been resized.
+If the image has been significantly upsized it will be immediately apparent on the fft as many of the high frequency pixels away from the center will have values close to zero. Clicking and dragging on the fft image will allow you to select an area which should correspond to the bandwidth of the original image in each direction. The dimensions of this rectangle as well as the scaling factors in both directions will be printed. If well selected, the dimensions of the rectangle should correspond to the original resolution of the resized image and the scaling factors will tell you by how much the image has been resized.
 
 The histogram along with the statistics are provided in order to help fine tune the selection, allowing for a more accurate estimate of the resolution; the figure will update after a new area is selected on the fft. The general idea here is that sampling from any spurious frequency components near the edges of the main part of the spectrum should induce noticeable changes in the distribution. Ideally the values should be approximately normally distributed; the distribution should look unimodal with small differences between the mean, median, and mode as well as exhibit a low skewness and kurtosis. Any deviation from this should be apparent, giving you an approximate bound on the dimensions of the original image.
+
+The figure contains several elements you can interact with:
+* Sliders control the width and height of the rectangle;
+* Clicking on the Center button will center the rectangle;
+* Enabling Lock AR maintains the rectangle's aspect ratio as you move the sliders;
+* The Live toggle will enable live dynamic updating of the histogram;
+* The Update button will update the histogram on demand.
