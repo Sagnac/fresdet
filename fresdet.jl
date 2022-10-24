@@ -13,6 +13,12 @@ using FFTW # v1.5.0
 using StatsBase # v0.33.21
 using GLMakie # v0.6.13
 import GLMakie: Axis, Makie.async_latest as async_latest
+import GLMakie: Makie.position2string as p2s
+import GLMakie: Makie.color2text as c2t
+import GLMakie: Makie.StaticVector as SV
+
+p2s(p::SV{2}) = "x: $(round(Int, p[1]))\ny: $(round(Int, p[2]))"
+c2t(name, x::Integer, y::Integer, z) = "$x, $y = $(Int(z))"
 
 function fftimage(file)
     image1 = file |> load |> rotr90
