@@ -1,6 +1,6 @@
 # fresdet.jl
-# Version 0.7.0
-# 2022-10-12
+# Version 0.7.1
+# 2022-10-25
 # https://github.com/Sagnac/fresdet
 
 # Simple analysis tool for estimating the original resolution
@@ -11,7 +11,7 @@
 using Images # v0.25.2
 using FFTW # v1.5.0
 using StatsBase # v0.33.21
-using GLMakie # v0.6.13
+using GLMakie # v0.7.0
 import GLMakie: Axis, Makie.async_latest as async_latest
 import GLMakie: Makie.position2string as p2s
 import GLMakie: Makie.color2text as c2t
