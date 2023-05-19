@@ -1,17 +1,15 @@
 # fresdet.jl
-# Version 0.7.1
-# 2022-10-25
+# Version 0.7.2
+# 2023-5-19
 # https://github.com/Sagnac/fresdet
 
 # Simple analysis tool for estimating the original resolution
 # of standard upscaled images using ffts and basic statistical metrics.
 
-# Julia v1.8.0
-
-using Images # v0.25.2
-using FFTW # v1.5.0
-using StatsBase # v0.33.21
-using GLMakie # v0.7.0
+using Images
+using FFTW
+using StatsBase
+using GLMakie
 import GLMakie: Axis, Makie.async_latest as async_latest
 import GLMakie: Makie.position2string as p2s
 import GLMakie: Makie.color2text as c2t
