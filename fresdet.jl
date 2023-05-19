@@ -37,7 +37,7 @@ function stats(v)
     n, replace(s6, "-" => "\u2212")
 end
 
-function fresdet(file, script = !isinteractive())
+function fresdet(file; script = !isinteractive())
 
     S = fftimage(file)
     w, h = size(S)
