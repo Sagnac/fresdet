@@ -48,7 +48,14 @@ Alternatively, you can run the program as a script, passing the image as an argu
 julia fresdet.jl image.png
 ```
 
-If you don't want to wait for the packages to load (Julia is a JIT compiled language so loading some packages like GLMakie can be slow) or the first plot latency you can create a custom sysimage with the PackageCompiler.jl package which will precompile all of the necessary functions and speed things up. A precompilation script is provided in [precompile.jl](precompile.jl). Note that this sysimage can be quite large in size, but at the moment there isn't a way to provide a small relocatable binary of the program which works across all operating systems.
+If you don't want to wait for the packages to load (Julia is a JIT compiled language so loading some packages like GLMakie can be slow) or the first plot latency you can create a custom sysimage with the PackageCompiler.jl package which will precompile all of the necessary functions and speed things up. A precompilation script is provided in [precompile.jl](precompile/precompile.jl). Note that this sysimage can be quite large in size, but at the moment there isn't a way to provide a small relocatable binary of the program which works across all operating systems.
+
+Note that while this is not currently a package you can make sure you have the right versions of the dependencies by cloning the repository and then from the root directory activating the project and instantiating its environment in Julia:
+```
+using Pkg
+Pkg.activate(".")
+Pkg.instantiate()
+```
 
 ----
 
