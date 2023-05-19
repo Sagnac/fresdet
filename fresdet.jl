@@ -89,7 +89,7 @@ function fresdet(file, script = !isinteractive())
     xs, ys = [@lift(round.((w / $Lx, h / $Ly); digits = 2)[i]) for i in 1:2]
 
     # add center button
-    centre = Button(fig[2,3], label = "Center", textsize = 0.76t)
+    centre = Button(fig[2,3], label = "Center", fontsize = 0.76t)
     on(centre.clicks) do _
         xc[] = div(w, 2)
         yc[] = div(h, 2)
@@ -114,7 +114,7 @@ function fresdet(file, script = !isinteractive())
     # set lock toggle
     arlock = Toggle(fig[3,3])
     Label(fig[3,2], "Lock AR", halign = :right, tellwidth = false,
-          textsize = 0.76t)
+          fontsize = 0.76t)
 
     on(arlock.active) do active
         if active
@@ -160,11 +160,11 @@ function fresdet(file, script = !isinteractive())
     HGrid = fig[1,1] = GridLayout(tellwidth = false, tellheight = false,
                                   valign = :top, halign = :right)
     HGrid[1,1] = Label(fig, "")
-    HGrid[2,1] = Label(fig, "Live", textsize = t)
+    HGrid[2,1] = Label(fig, "Live", fontsize = t)
     HGrid[2,2] = live = Toggle(fig)
     HGrid[3,1] = Label(fig, @lift($(live.active) || $Svs == $Sv ? "\u2713" : ""),
-                       textsize = 2t)
-    HGrid[3,2] = update = Button(fig, label = "Update", textsize = t)
+                       fontsize = 2t)
+    HGrid[3,2] = update = Button(fig, label = "Update", fontsize = t)
     HGrid[3,3] = Label(fig, "")
 
     # set the histogram
