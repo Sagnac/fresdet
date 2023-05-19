@@ -173,7 +173,7 @@ function fresdet(file, script = !isinteractive())
     deregister_interaction!(Haxis, :rectanglezoom)
     H = hist!(Haxis, Svs, bins = n, color = RGBf(0, 0.5, 0.8))
     # abuse the legend since it's easier than making a custom text! box
-    legend = axislegend(Haxis, [MarkerElement(marker = "", color = :transparent)],
+    legend = axislegend(Haxis, [MarkerElement(marker = '!', color = :transparent)],
                         [s6], titlesize = t, labelsize = t, position = :rc)
 
     # interval change callback for related histogram attributes
