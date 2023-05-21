@@ -1,10 +1,13 @@
+using Pkg
 using PackageCompiler
 
-# you can use create_sysimage(; kwargs...) if you've activated the project and
-# instantiated the environment
-create_sysimage([:Images, :FFTW, :StatsBase, :GLMakie];
-                sysimage_path = "fresdet." * Libc.Libdl.dlext,
-                precompile_execution_file = "precompile/precompile_script.jl")
+Pkg.activate(".")
+
+sysimage_path = "fresdet." * Libc.Libdl.dlext
+
+precompile_execution_file = "precompile/precompile_script.jl"
+
+create_sysimage(; sysimage_path, precompile_execution_file)
 
 #=
 
