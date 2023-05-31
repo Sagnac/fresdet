@@ -266,4 +266,8 @@ if !isempty(ARGS)
     empty!(ARGS)
 end
 
+function Base.show(::IO, ::Tuple{Makie.Figure, Matrix{Float64}})
+    print("(Makie.Figure, Matrix{Float64})")
+end
+
 print()
