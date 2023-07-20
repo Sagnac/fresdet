@@ -10,10 +10,8 @@ using Images
 using FFTW
 using StatsBase
 using GLMakie
-import GLMakie: Axis, Makie.async_latest as async_latest
-import GLMakie: Makie.position2string as p2s
-import GLMakie: Makie.color2text as c2t
-import GLMakie: Makie.StaticVector as SV
+import .Makie: Axis, async_latest, position2string as p2s, color2text as c2t,
+               StaticVector as SV
 
 p2s(p::SV{2}) = "x: $(round(Int, p[1]))\ny: $(round(Int, p[2]))"
 c2t(name, x::Integer, y::Integer, z) = "$x, $y = $(Int(z))"
