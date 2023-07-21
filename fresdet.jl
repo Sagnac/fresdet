@@ -42,6 +42,7 @@ function fresdet(file; script = !isinteractive())
     (; height) = monitor_properties.videomode
     res = (height, height/2)
     t = 0.1 * monitor_properties.dpi[1] # text size
+    t2 = 0.76t # smaller text size used for some of the outer widgets
     fig = Figure(resolution = res)
 
     local of1, of2, ov, AR
@@ -88,7 +89,7 @@ function fresdet(file; script = !isinteractive())
     xs, ys = [@lift(round.((w / $Lx, h / $Ly); digits = 2)[i]) for i in 1:2]
 
     # add center button
-    centre = Button(fig[2,3], label = "Center", fontsize = 0.76t)
+    centre = Button(fig[2,3], label = "Center", fontsize = t2)
     on(centre.clicks) do _
         xc[] = div(w, 2)
         yc[] = div(h, 2)
@@ -113,7 +114,7 @@ function fresdet(file; script = !isinteractive())
     # set lock toggle
     arlock = Toggle(fig[3,3])
     Label(fig[3,2], "Lock AR", halign = :right, tellwidth = false,
-          fontsize = 0.76t)
+          fontsize = t2)
 
     on(arlock.active) do active
         if active
@@ -241,7 +242,7 @@ function fresdet(file; script = !isinteractive())
 
     # fft save button (saves the fft 1:1 without the axis)
     savefft = Button(fig[2,1], label = "Save FFT", halign = :right,
-                     tellwidth = false, fontsize = 0.76t)
+                     tellwidth = false, fontsize = t2)
     on(savefft.clicks) do _
         Z = image(S, colormap = :tokyo, interpolate = false,
                   figure = (resolution = (w, h),),
@@ -257,7 +258,7 @@ function fresdet(file; script = !isinteractive())
 
     # figure save button
     savefig = Button(fig[2,1], label = "Save figure", halign = :left,
-                     tellwidth = false, fontsize = 0.76t)
+                     tellwidth = false, fontsize = t2)
     on(savefig.clicks) do _
         save("fresdet.png", colorbuffer(screen))
         println("Figure saved as fresdet.png")
