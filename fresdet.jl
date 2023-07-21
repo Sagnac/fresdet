@@ -10,6 +10,7 @@ using Images
 using FFTW
 using StatsBase
 using GLMakie
+import GLMakie: GLFW.GetPrimaryMonitor, MonitorProperties
 import .Makie: Axis, async_latest, position2string as p2s, color2text as c2t,
                StaticVector as SV
 
@@ -37,8 +38,10 @@ function fresdet(file; script = !isinteractive())
 
     S = fftimage(file)
     w, h = size(S)
-    t = 25 # text size
-    res = (2000, 1000)
+    monitor_properties = MonitorProperties(GetPrimaryMonitor())
+    (; height) = monitor_properties.videomode
+    res = (height, height/2)
+    t = 0.1 * monitor_properties.dpi[1] # text size
     fig = Figure(resolution = res)
 
     local of1, of2, ov, AR
