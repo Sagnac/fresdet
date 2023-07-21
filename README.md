@@ -29,19 +29,10 @@ GLMakie
 You can run the program from the Julia REPL:
 ```
 include("fresdet.jl")
-fresdet("image.png");
+fresdet("image.png")
 ```
 
-Calling fresdet returns two values:
-* The figure containing both histogram and fft images;
-* The fft matrix.
-
-This allows you to save two figures:
-```
-fig, S = fresdet("image.png");
-save("fresdet.png", fig) # saves the figure in its current state
-savefft("barefft.png", S) # saves the fft without the axis in its original size
-```
+Calling `fresdet` returns the figure containing both histogram and fft images.
 
 Alternatively, you can run the program as a script, passing the image as an argument:
 ```
@@ -67,7 +58,9 @@ The histogram along with the statistics are provided in order to help fine tune 
 
 The figure contains several elements you can interact with:
 * Sliders control the width and height of the rectangle;
-* Clicking on the Center button will center the rectangle;
-* Enabling Lock AR maintains the rectangle's aspect ratio as you move the sliders;
-* The Live toggle will enable live dynamic updating of the histogram;
-* The Update button will update the histogram on demand.
+* Clicking on the `Center` button will center the rectangle;
+* Enabling `Lock AR` maintains the rectangle's aspect ratio as you move the sliders;
+* The `Live` toggle will enable live dynamic updating of the histogram;
+* The `Update` button will update the histogram on demand;
+* The `Save figure` button saves the figure in its current state as `fresdet.png` in your current working directory;
+* The `Save FFT` button saves the fft without the axis in its original size as `FFT.png` in your current working directory.
