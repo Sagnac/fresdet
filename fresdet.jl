@@ -10,9 +10,9 @@ using Images
 using FFTW
 using StatsBase
 using GLMakie
-import GLMakie: GLFW.GetPrimaryMonitor, MonitorProperties
+import GLMakie: GLFW.GetPrimaryMonitor, MonitorProperties, Screen, destroy!
 import .Makie: Axis, async_latest, position2string as p2s, color2text as c2t,
-               StaticVector as SV
+               StaticVector as SV, colorbuffer
 
 p2s(p::SV{2}) = "x: $(round(Int, p[1]))\ny: $(round(Int, p[2]))"
 c2t(name, x::Integer, y::Integer, z) = "$x, $y = $(Int(z))"
@@ -239,36 +239,45 @@ function fresdet(file; script = !isinteractive())
         nothing
     end
 
+    # fft save button (saves the fft 1:1 without the axis)
+    savefft = Button(fig[2,1], label = "Save FFT", halign = :right,
+                     tellwidth = false, fontsize = 0.76t)
+    on(savefft.clicks) do _
+        Z = image(S, colormap = :tokyo, interpolate = false,
+                  figure = (resolution = (w, h),),
+                  axis = (width = w, height = h))
+        hidespines!(Z.axis)
+        hidedecorations!(Z.axis)
+        fftscreen = display(Screen(; visible = false), Z)
+        save("FFT.png", colorbuffer(fftscreen))
+        destroy!(fftscreen)
+        println("FFT saved as FFT.png")
+        nothing
+    end
+
+    # figure save button
+    savefig = Button(fig[2,1], label = "Save figure", halign = :left,
+                     tellwidth = false, fontsize = 0.76t)
+    on(savefig.clicks) do _
+        save("fresdet.png", colorbuffer(screen))
+        println("Figure saved as fresdet.png")
+        nothing
+    end
+
     # render
     set_window_config!(title = "fresdet", focus_on_show = true)
     screen = display(fig)
 
     script && wait(screen)
 
-    return fig, S
+    return fig
 
-end
-
-# saves the fft 1:1 without the axis
-function savefft(filename::String, S::Matrix)
-    r = size(S)
-    Z = image(S, colormap = :tokyo, interpolate = false,
-              figure = (resolution = r,),
-              axis = (width = r[1], height = r[2]),)
-    hidespines!(Z.axis)
-    hidedecorations!(Z.axis)
-    save(filename, Z)
-    return nothing
 end
 
 # script support
 if !isempty(ARGS)
     fig, S = fresdet(ARGS[1]);
     empty!(ARGS)
-end
-
-function Base.show(::IO, ::Tuple{Makie.Figure, Matrix{Float64}})
-    print("(Makie.Figure, Matrix{Float64})")
 end
 
 print()
