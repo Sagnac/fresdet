@@ -11,11 +11,7 @@ using FFTW
 using StatsBase
 using GLMakie
 using GLMakie: GLFW.GetPrimaryMonitor, MonitorProperties, Screen, destroy!
-using .Makie: Axis, async_latest, colorbuffer, StaticVector
-import .Makie: position2string as p2s, color2text as c2t
-
-p2s(p::StaticVector{2}) = "x: $(round(Int, p[1]))\ny: $(round(Int, p[2]))"
-c2t(name, x::Integer, y::Integer, z) = "$x, $y = $(Int(z))"
+using .Makie: Axis, async_latest, colorbuffer
 
 function fftimage(file)
     image1 = file |> load |> rotr90
@@ -128,19 +124,24 @@ function fresdet(file; script = !isinteractive())
         nothing
     end
 
+    # set the strings for the inspector labels
+    image_inspector(_, i, p) = "$(i[1]), $(i[2]) = $(Int(p[3]))"
+    histogram_inspector(_, _, p) = "x: $(round(Int, p[1]))\ny: $(round(Int, p[2]))"
+
     # set the fft image
     fftaxis = Axis(fig[1,2], aspect = DataAspect(),
                    title = @lift("Effective Resolution: $($Lx) x $($Ly)"),
                    subtitle = @lift("x-scale: $($xs), y-scale: $($ys)"),
                    titlesize = t, subtitlesize = t)
     deregister_interaction!(fftaxis, :rectanglezoom)
-    image!(fftaxis, S, colormap = :tokyo, interpolate = false)
+    image!(fftaxis, S, colormap = :tokyo, interpolate = false,
+           inspector_label = image_inspector)
     rect = select_rectangle(fftaxis)
     DataInspector(fig)
 
     # draw rectangle
     r4 = @lift(Rect($x1, $y1, $Lx, $Ly))
-    R = lines!(fftaxis, r4, linestyle = :dot,
+    R = lines!(fftaxis, r4, linestyle = :dot, inspectable = false,
                color = RGBf(0, 1, 0.38), linewidth = 7)
 
     # selection observables
@@ -171,7 +172,8 @@ function fresdet(file; script = !isinteractive())
     Haxis = Axis(fig[1,1], title = "$w x $h pixels", titlesize = t,
                  xlabel = "pixel value [0-255]", ylabel = "pixel count")
     deregister_interaction!(Haxis, :rectanglezoom)
-    H = hist!(Haxis, Svs, bins = n, color = RGBf(0, 0.5, 0.8))
+    H = hist!(Haxis, Svs, bins = n, color = RGBf(0, 0.5, 0.8),
+              inspector_label = histogram_inspector)
     # abuse the legend since it's easier than making a custom text! box
     legend = axislegend(Haxis, [MarkerElement(marker = '!', color = :transparent)],
                         [s6], titlesize = t, labelsize = t, position = :rc)
@@ -202,11 +204,13 @@ function fresdet(file; script = !isinteractive())
     on(live.active) do active
         delete!(Haxis, H)
         if active
-            H = hist!(Haxis, Svlt, bins = n, color = RGBf(0, 0.8, 0.3))
+            H = hist!(Haxis, Svlt, bins = n, color = RGBf(0, 0.8, 0.3),
+                      inspector_label = histogram_inspector)
             ov = on(refresh, Svlt)
         else
             off(ov)
-            H = hist!(Haxis, Svs, bins = n, color = RGBf(0, 0.5, 0.8))
+            H = hist!(Haxis, Svs, bins = n, color = RGBf(0, 0.5, 0.8),
+                      inspector_label = histogram_inspector)
             Svs[] = Sv[]
         end
         refresh()
