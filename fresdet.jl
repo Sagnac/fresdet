@@ -10,8 +10,8 @@ using Images
 using FFTW
 using StatsBase
 using GLMakie
-using GLMakie: GLFW.GetPrimaryMonitor, MonitorProperties, Screen, destroy!
-using .Makie: Axis, async_latest, colorbuffer
+using GLMakie: GLFW.GetPrimaryMonitor, MonitorProperties
+using .Makie: Axis, async_latest
 
 function fftimage(file)
     image1 = file |> load |> rotr90
@@ -244,28 +244,12 @@ function fresdet(file; script = !isinteractive())
         nothing
     end
 
-    # fft save button (saves the fft 1:1 without the axis)
+    # fft save button
     savefft = Button(fig[2,1], label = "Save FFT", halign = :right,
                      tellwidth = false, fontsize = t2)
     on(savefft.clicks) do _
-        Z = image(S, colormap = :tokyo, interpolate = false,
-                  figure = (resolution = (w, h),),
-                  axis = (width = w, height = h))
-        hidespines!(Z.axis)
-        hidedecorations!(Z.axis)
-        fftscreen = display(Screen(; visible = false), Z)
-        save("FFT.png", colorbuffer(fftscreen))
-        destroy!(fftscreen)
-        println("FFT saved as FFT.png")
-        nothing
-    end
-
-    # figure save button
-    savefig = Button(fig[2,1], label = "Save figure", halign = :left,
-                     tellwidth = false, fontsize = t2)
-    on(savefig.clicks) do _
-        save("fresdet.png", colorbuffer(screen))
-        println("Figure saved as fresdet.png")
+        save("FFT.png", clamp01nan!(rotl90(S / 255)))
+        println("FFT saved as FFT.png in the present working directory.\n")
         nothing
     end
 
