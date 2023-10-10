@@ -14,12 +14,11 @@ using GLMakie: GLFW.GetPrimaryMonitor, MonitorProperties
 using .Makie: Axis, async_latest
 
 function fftimage(file)
-    image1 = file |> load |> rotr90
-    grayfloat = image1 .|> Gray .|> Float64
-    F = grayfloat |> fft |> fftshift
-    F2 = F .|> abs2
-    S = F2 .+ 1 .|> log
-    S * 255 / maximum(S) .|> round
+    image = file |> load |> rotr90
+    image = image .|> Gray .|> Float64
+    F2 = image |> fft |> fftshift .|> abs2
+    map!(x -> log(x + 1), F2, F2)
+    F2 * 255 / maximum(F2) .|> round
 end
 
 function stats(v)
