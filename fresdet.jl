@@ -9,6 +9,7 @@
 using Images
 using FFTW
 using StatsBase
+using Printf
 using GLMakie
 using GLMakie: GLFW.GetPrimaryMonitor, MonitorProperties
 using .Makie: Axis, async_latest
@@ -23,9 +24,9 @@ end
 
 function stats(v)
     n::Int = maximum(v) - minimum(v) + 1
-    c = (mean(v), median(v), mode(v), std(v), skewness(v), kurtosis(v))
-    m, d, o, s, g, k = round.(c; digits = 3)
-    s6 = "mean: $m\nmedian: $d\nmode: $o\nst.dev.: $s\nskew: $g\nkurtosis: $k"
+    c = [f(v) for f in (mean, median, mode, std, skewness, kurtosis)]
+    s6 = @sprintf "mean: %.3f\nmedian: %.3f\nmode: %.3f\n\
+                   st.dev.: %.3f\nskew: %.3f\nkurtosis: %.3f" c...
     n, replace(s6, "-" => "\u2212")
 end
 
