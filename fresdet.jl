@@ -25,8 +25,17 @@ end
 function stats(v)
     n::Int = maximum(v) - minimum(v) + 1
     c = [f(v) for f in (mean, median, mode, std, skewness, kurtosis)]
-    s6 = @sprintf "mean: %.3f\nmedian: %.3f\nmode: %.3f\n\
-                   st.dev.: %.3f\nskew: %.3f\nkurtosis: %.3f" c...
+    s6 = @sprintf(
+             """
+             mean: %.3f
+             median: %.3f
+             mode: %.3f
+             st.dev.: %.3f
+             skew: %.3f
+             kurtosis: %.3f
+             """,
+             c...
+         )
     n, replace(s6, "-" => "\u2212")
 end
 
