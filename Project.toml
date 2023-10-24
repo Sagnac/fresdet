@@ -1,5 +1,5 @@
 # name = "fresdet"
-# version = "0.9.1"
+# version = "0.9.2"
 # authors = ["Sagnac"]
 # uuid = "06536970-5ab0-4446-9835-16abe0ef5a70"
 
@@ -12,6 +12,6 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 FFTW = "1.7.1"
-GLMakie = "=0.8.6"
+GLMakie = "=0.8.6, 0.8.12"
 Images = "0.26.0"
 StatsBase = "0.34.0"
