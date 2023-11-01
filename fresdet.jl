@@ -154,13 +154,7 @@ function fresdet(file; script = !isinteractive())
                color = RGBf(0, 1, 0.38), linewidth = 7)
 
     # selection observables
-    Sv = @lift(vec(S[$x1+1:$x2, $y1+1:$y2]))
-    on(Sv) do vs
-        if allequal(vs)
-            push!(Sv[], isempty(vs) ? 0 : vs[1] + 1)
-        end
-        nothing
-    end
+    Sv = @lift(vec(@view S[$x1+1:$x2, $y1+1:$y2]))
     n, s6 = stats(Sv[])
     n = Observable(n)
     Svs = Observable(Sv[])
