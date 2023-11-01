@@ -222,8 +222,8 @@ function fresdet(file; script = !isinteractive())
     # rectangle selection callback
     on(rect) do v
         # bounds
-        x01, y01 = round.(Int, v.origin)
-        Lx0, Ly0 = round.(Int, v.widths)
+        x01, y01 = trunc.(Int, v.origin)
+        Lx0, Ly0 = ceil.(Int, v.widths)
         x01 = clamp(x01, 0, w - 1)
         y01 = clamp(y01, 0, h - 1)
         x02 = clamp(Lx0 + x01, x01 + 1, w)
