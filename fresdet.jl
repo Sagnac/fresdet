@@ -86,10 +86,7 @@ function fresdet(file; script = !isinteractive())
     end
 
     x = lift(xpoints, xc, Lx; ignore_equal_values = true)
-    x1, x2 = [lift(x -> x[i], x; ignore_equal_values = true) for i in 1:2]
-
     y = lift(ypoints, yc, Ly; ignore_equal_values = true)
-    y1, y2 = [lift(y -> y[i], y; ignore_equal_values = true) for i in 1:2]
 
     scale = @lift(@sprintf("x-scale: %.2f, y-scale: %.2f", w / $Lx, h / $Ly))
 
@@ -149,12 +146,15 @@ function fresdet(file; script = !isinteractive())
     DataInspector(fig)
 
     # draw rectangle
-    r4 = @lift(Rect($x1, $y1, $Lx, $Ly))
+    selection = lift((x, y, Lx, Ly) -> (x[1], y[1], Lx, Ly), x, y, Lx, Ly;
+                     ignore_equal_values = true)
+    r4 = @lift(Rect($selection...))
     R = lines!(fftaxis, r4, linestyle = :dot, inspectable = false,
                color = RGBf(0, 1, 0.38), linewidth = 7)
 
     # selection observables
-    Sv = @lift(vec(@view S[$x1+1:$x2, $y1+1:$y2]))
+    Sv = lift((x, y) -> vec(@view S[x[1]+1:x[2], y[1]+1:y[2]]), x, y;
+              ignore_equal_values = true)
     n, s6 = stats(Sv[])
     n = Observable(n)
     Svs = Observable(Sv[])
@@ -231,9 +231,9 @@ function fresdet(file; script = !isinteractive())
 
         # set
         arlock.active[] && off(of1) && off(of2)
-        xc[] = x01 + div(Lx0, 2)
+        xc.val = x01 + div(Lx0, 2)
+        yc.val = y01 + div(Ly0, 2)
         set_close_to!(sliderx, Lx0)
-        yc[] = y01 + div(Ly0, 2)
         set_close_to!(slidery, Ly0)
         AR = Lx[] / Ly[]
         Svs[] = Sv[]
