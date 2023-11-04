@@ -91,7 +91,7 @@ function fresdet(file; script = !isinteractive())
     y = lift(ypoints, yc, Ly; ignore_equal_values = true)
     y1, y2 = [lift(y -> y[i], y; ignore_equal_values = true) for i in 1:2]
 
-    xs, ys = [@lift(round.((w / $Lx, h / $Ly); digits = 2)[i]) for i in 1:2]
+    scale = @lift(@sprintf("x-scale: %.2f, y-scale: %.2f", w / $Lx, h / $Ly))
 
     # add center button
     centre = Button(fig[2,3], label = "Center", fontsize = t2)
@@ -134,13 +134,13 @@ function fresdet(file; script = !isinteractive())
     end
 
     # set the strings for the inspector labels
-    image_inspector(_, i, p) = "$(i[1]), $(i[2]) = $(Int(p[3]))"
-    histogram_inspector(_, _, p) = "x: $(round(Int, p[1]))\ny: $(round(Int, p[2]))"
+    image_inspector(_, i, p) = @sprintf "%u, %u = %u" i[1] i[2] p[3]
+    histogram_inspector(_, _, p) = @sprintf "x: %.0f\ny: %.0f" p[1] p[2]
 
     # set the fft image
     fftaxis = Axis(fig[1,2], aspect = DataAspect(),
                    title = @lift("Effective Resolution: $($Lx) x $($Ly)"),
-                   subtitle = @lift("x-scale: $($xs), y-scale: $($ys)"),
+                   subtitle = scale,
                    titlesize = t, subtitlesize = t)
     deregister_interaction!(fftaxis, :rectanglezoom)
     image!(fftaxis, S, colormap = :tokyo, interpolate = false,
@@ -172,7 +172,7 @@ function fresdet(file; script = !isinteractive())
     HGrid[3,3] = Label(fig, "")
 
     # set the histogram
-    Haxis = Axis(fig[1,1], title = "$w x $h pixels", titlesize = t,
+    Haxis = Axis(fig[1,1], title = @lift("$($Lx) x $($Ly) pixels"), titlesize = t,
                  xlabel = "pixel value [0-255]", ylabel = "pixel count")
     deregister_interaction!(Haxis, :rectanglezoom)
     H = hist!(Haxis, Svs, bins = n, color = RGBf(0, 0.5, 0.8),
@@ -184,7 +184,6 @@ function fresdet(file; script = !isinteractive())
     # interval change callback for related histogram attributes
     function refresh(Svlt = Sv[])
         n[], legend.entrygroups[][1][2][1].label[] = stats(Svlt)
-        Haxis.title[] = "$(Lx[]) x $(Ly[]) pixels"
         reset_limits!(Haxis)
         return
     end
@@ -192,7 +191,7 @@ function fresdet(file; script = !isinteractive())
     # console printing
     function info()
         println("\nEffective Resolution: $(Lx[]) x $(Ly[])")
-        println("x-scale: $(xs[])\ny-scale: $(ys[])")
+        println(scale[])
         return
     end
 
