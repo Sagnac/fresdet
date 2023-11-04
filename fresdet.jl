@@ -95,6 +95,8 @@ function fresdet(file; script = !isinteractive())
     on(centre.clicks) do _
         xc[] = div(w, 2)
         yc[] = div(h, 2)
+        Svs[] = Sv[]
+        refresh()
         nothing
     end
 
