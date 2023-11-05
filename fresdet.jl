@@ -174,7 +174,7 @@ function fresdet(file; script = !isinteractive())
     HGrid[3,3] = Label(fig, "")
 
     # set the histogram
-    Haxis = Axis(fig[1,1], title = @lift("$($Lx) x $($Ly) pixels"), titlesize = t,
+    Haxis = Axis(fig[1,1], title = "$w x $h pixels", titlesize = t,
                  xlabel = "pixel value [0-255]", ylabel = "pixel count")
     deregister_interaction!(Haxis, :rectanglezoom)
     H = hist!(Haxis, Svs, bins = n, color = RGBf(0, 0.5, 0.8),
@@ -186,6 +186,7 @@ function fresdet(file; script = !isinteractive())
     # interval change callback for related histogram attributes
     function refresh(Svlt = Sv[])
         n[], legend.entrygroups[][1][2][1].label[] = stats(Svlt)
+        Haxis.title[] = "$(Lx[]) x $(Ly[]) pixels"
         reset_limits!(Haxis)
         return
     end
