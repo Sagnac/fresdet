@@ -91,7 +91,9 @@ function fresdet(file; script = !isinteractive())
     scale = @lift(@sprintf("x-scale: %.2f, y-scale: %.2f", w / $Lx, h / $Ly))
 
     # add center button
-    centre = Button(fig[2,3], label = "Center", fontsize = t2)
+    buttoncolor = @lift($xc == div(w, 2) && $yc == div(h, 2) ?
+                  RGBf(0.94, 0.94, 0.94) : RGBf(0.0, 1.0, 1.0))
+    centre = Button(fig[2,3]; label = "Center", buttoncolor, fontsize = t2)
     on(centre.clicks) do _
         xc[] = div(w, 2)
         yc[] = div(h, 2)
@@ -234,8 +236,8 @@ function fresdet(file; script = !isinteractive())
 
         # set
         arlock.active[] && off(of1) && off(of2)
-        xc.val = x01 + div(Lx0, 2)
-        yc.val = y01 + div(Ly0, 2)
+        xc[] = x01 + div(Lx0, 2)
+        yc[] = y01 + div(Ly0, 2)
         set_close_to!(sliderx, Lx0)
         set_close_to!(slidery, Ly0)
         AR = Lx[] / Ly[]
