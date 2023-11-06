@@ -11,7 +11,8 @@ using FFTW
 using StatsBase
 using Printf
 using GLMakie
-using GLMakie: GLFW.GetPrimaryMonitor, MonitorProperties
+using GLMakie: GLFW.GetPrimaryMonitor, GLFW.GetMonitorContentScale,
+               MonitorProperties, activate!
 using .Makie: Axis, async_latest
 
 function fftimage(file)
@@ -43,12 +44,14 @@ function fresdet(file; script = !isinteractive())
 
     S = fftimage(file)
     w, h = size(S)
-    monitor_properties = MonitorProperties(GetPrimaryMonitor())
+    monitor = GetPrimaryMonitor()
+    monitor_properties = MonitorProperties(monitor)
+    dpi_scale = mean(GetMonitorContentScale(monitor))
     (; height) = monitor_properties.videomode
-    res = (height, height/2)
-    t = 0.1 * monitor_properties.dpi[1] # text size
+    res = (height, height/2) ./ dpi_scale
+    t = 0.1 * monitor_properties.dpi[1] / dpi_scale # text size
     t2 = 0.76t # smaller text size used for some of the outer widgets
-    fig = Figure(resolution = res)
+    fig = Figure(size = res)
 
     local AR
 
@@ -146,14 +149,14 @@ function fresdet(file; script = !isinteractive())
     image!(fftaxis, S, colormap = :tokyo, interpolate = false,
            inspector_label = image_inspector)
     rect = select_rectangle(fftaxis)
-    DataInspector(fig)
+    DataInspector(fig; fontsize = t2)
 
     # draw rectangle
     selection = lift((x, y, Lx, Ly) -> (x[1], y[1], Lx, Ly), x, y, Lx, Ly;
                      ignore_equal_values = true)
     r4 = @lift(Rect($selection...))
     R = lines!(fftaxis, r4, linestyle = :dot, inspectable = false,
-               color = RGBf(0, 1, 0.38), linewidth = 7)
+               color = RGBf(0, 1, 0.38), linewidth = 7 / dpi_scale)
 
     # selection observables
     Sv = lift((x, y) -> vec(@view S[x[1]+1:x[2], y[1]+1:y[2]]), x, y;
@@ -251,7 +254,7 @@ function fresdet(file; script = !isinteractive())
     end
 
     # render
-    set_window_config!(title = "fresdet", focus_on_show = true)
+    activate!(title = "fresdet", focus_on_show = true)
     screen = display(fig)
 
     script && wait(screen)
