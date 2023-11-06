@@ -61,6 +61,5 @@ The figure contains several elements you can interact with:
 * Clicking on the `Center` button will center the rectangle;
 * Enabling `Lock AR` maintains the rectangle's aspect ratio as you move the sliders;
 * The `Live` toggle will enable live dynamic updating of the histogram;
-* The `Update` button will update the histogram on demand;
 * Calling `save("filename.png", figure)` will save the figure in its current state;
 * The `Save FFT` button saves the fft without the axis in its original size as `FFT.png` in your current working directory.

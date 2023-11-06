@@ -50,7 +50,7 @@ function fresdet(file; script = !isinteractive())
     t2 = 0.76t # smaller text size used for some of the outer widgets
     fig = Figure(resolution = res)
 
-    local of1, of2, ov, AR
+    local AR
 
     # sliders
     xc = Observable(div(w, 2))
@@ -97,7 +97,6 @@ function fresdet(file; script = !isinteractive())
     on(centre.clicks) do _
         xc[] = div(w, 2)
         yc[] = div(h, 2)
-        Svs[] = Sv[]
         refresh()
         nothing
     end
@@ -105,17 +104,22 @@ function fresdet(file; script = !isinteractive())
     # slider callback functions under lock
     function f1(x)
         off(of2)
-        set_close_to!(slidery, round(Int, Lx[] / AR[]))
+        arlock.active[] && set_close_to!(slidery, round(Int, Lx[] / AR))
+        update()
         of2 = on(f2, Ly)
         return
     end
 
     function f2(y)
         off(of1)
-        set_close_to!(sliderx, round(Int, Ly[] * AR[]))
+        arlock.active[] && set_close_to!(sliderx, round(Int, Ly[] * AR))
+        update()
         of1 = on(f1, Lx)
         return
     end
+
+    of1 = on(f1, Lx)
+    of2 = on(f2, Ly)
 
     # set lock toggle
     arlock = Toggle(fig[3,3])
@@ -125,11 +129,6 @@ function fresdet(file; script = !isinteractive())
     on(arlock.active) do active
         if active
             AR = Lx[] / Ly[]
-            of1 = on(f1, Lx)
-            of2 = on(f2, Ly)
-        else
-            off(of1)
-            off(of2)
         end
         nothing
     end
@@ -170,10 +169,7 @@ function fresdet(file; script = !isinteractive())
     HGrid[1,1] = Label(fig, "")
     HGrid[2,1] = Label(fig, "Live", fontsize = t)
     HGrid[2,2] = live = Toggle(fig)
-    HGrid[3,1] = Label(fig, @lift($(live.active) || $Svs == $Sv ? "\u2713" : ""),
-                       fontsize = 2t)
-    HGrid[3,2] = update = Button(fig, label = "Update", fontsize = t)
-    HGrid[3,3] = Label(fig, "")
+    HGrid[2,3] = Label(fig, "")
 
     # set the histogram
     Haxis = Axis(fig[1,1], title = "$w x $h pixels", titlesize = t,
@@ -186,8 +182,9 @@ function fresdet(file; script = !isinteractive())
                         [s6], titlesize = t, labelsize = t, position = :rc)
 
     # interval change callback for related histogram attributes
-    function refresh(Svlt = Sv[])
-        n[], legend.entrygroups[][1][2][1].label[] = stats(Svlt)
+    function refresh()
+        Svs[] = Sv[]
+        n[], legend.entrygroups[][1][2][1].label[] = stats(Sv[])
         Haxis.title[] = "$(Lx[]) x $(Ly[]) pixels"
         reset_limits!(Haxis)
         return
@@ -200,27 +197,22 @@ function fresdet(file; script = !isinteractive())
         return
     end
 
-    # histogram callbacks
-    on(update.clicks) do _
-        Svs[] = Sv[]
-        refresh()
-        info()
-        nothing
+    on(_ -> live.active[] && refresh(), Svlt)
+
+    function update()
+        if !sliderx.dragging[] && !slidery.dragging[]
+            refresh()
+            info()
+        end
     end
 
     on(live.active) do active
-        delete!(Haxis, H)
         if active
-            H = hist!(Haxis, Svlt, bins = n, color = RGBf(0, 0.8, 0.3),
-                      inspector_label = histogram_inspector)
-            ov = on(refresh, Svlt)
+            H.color = RGBf(0, 0.8, 0.3)
         else
-            off(ov)
-            H = hist!(Haxis, Svs, bins = n, color = RGBf(0, 0.5, 0.8),
-                      inspector_label = histogram_inspector)
-            Svs[] = Sv[]
+            H.color = RGBf(0, 0.5, 0.8)
         end
-        refresh()
+        nothing
     end
 
     # rectangle selection callback
@@ -235,18 +227,16 @@ function fresdet(file; script = !isinteractive())
         Lx0, Ly0 = x02 - x01, y02 - y01
 
         # set
-        arlock.active[] && off(of1) && off(of2)
+        off(of1)
+        off(of2)
         xc[] = x01 + div(Lx0, 2)
         yc[] = y01 + div(Ly0, 2)
         set_close_to!(sliderx, Lx0)
         set_close_to!(slidery, Ly0)
         AR = Lx[] / Ly[]
-        Svs[] = Sv[]
         refresh()
-        if arlock.active[]
-            of1 = on(f1, Lx)
-            of2 = on(f2, Ly)
-        end
+        of1 = on(f1, Lx)
+        of2 = on(f2, Ly)
         info()
         nothing
     end
