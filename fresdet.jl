@@ -40,16 +40,18 @@ function stats(v)
     n, replace(s6, "-" => "\u2212")
 end
 
-function fresdet(file; script = !isinteractive())
+function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
 
     S = fftimage(file)
     w, h = size(S)
     monitor = GetPrimaryMonitor()
     monitor_properties = MonitorProperties(monitor)
     dpi_scale = mean(GetMonitorContentScale(monitor))
-    (; height) = monitor_properties.videomode
-    res = (height, height/2) ./ dpi_scale
-    t = 0.1 * monitor_properties.dpi[1] / dpi_scale # text size
+    if res == :auto
+        (; height) = monitor_properties.videomode
+        res = (height, height/2) ./ dpi_scale
+    end
+    t = textsize == :auto ? 0.1 * monitor_properties.dpi[1] / dpi_scale : textsize
     t2 = 0.76t # smaller text size used for some of the outer widgets
     fig = Figure(size = res)
 
