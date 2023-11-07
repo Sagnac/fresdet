@@ -61,5 +61,8 @@ The figure contains several elements you can interact with:
 * Clicking on the `Center` button will center the rectangle;
 * Enabling `Lock AR` maintains the rectangle's aspect ratio as you move the sliders;
 * The `Live` toggle will enable live dynamic updating of the histogram;
-* Calling `save("filename.png", figure)` will save the figure in its current state;
 * The `Save FFT` button saves the fft without the axis in its original size as `FFT.png` in your current working directory.
+
+Additionally:
+* The `res` and `textsize` keyword arguments control the plot size (DPI scaled window resolution, as a tuple) and the font size, respectively; e.g. `fresdet("image.png"; res = (800, 400), textsize = 15)`;
+* Calling `save("filename.png", figure)` will save the figure in its current state.
