@@ -103,7 +103,6 @@ function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
         xc[] = div(w, 2)
         yc[] = div(h, 2)
         refresh()
-        nothing
     end
 
     # slider callback functions under lock
@@ -209,6 +208,7 @@ function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
             refresh()
             info()
         end
+        return
     end
 
     on(live.active) do active
@@ -243,7 +243,6 @@ function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
         of1 = on(f1, Lx)
         of2 = on(f2, Ly)
         info()
-        nothing
     end
 
     # fft save button
@@ -252,7 +251,6 @@ function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
     on(savefft.clicks) do _
         save("FFT.png", clamp01nan!(rotl90(S / 255)))
         println("FFT saved as FFT.png in the present working directory.\n")
-        nothing
     end
 
     # render
