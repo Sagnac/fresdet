@@ -107,23 +107,47 @@ function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
 
     # slider callback functions under lock
     function f1(x)
-        off(of2)
-        arlock.active[] && set_close_to!(slidery, round(Int, Lx[] / AR))
+        if arlock.active[]
+            of2(false)
+            set_close_to!(slidery, round(Int, Lx[] / AR))
+        end
         update()
-        of2 = on(f2, Ly)
         return
     end
 
     function f2(y)
-        off(of1)
-        arlock.active[] && set_close_to!(sliderx, round(Int, Ly[] * AR))
+        if arlock.active[]
+            of1(false)
+            set_close_to!(sliderx, round(Int, Ly[] * AR))
+        end
         update()
-        of1 = on(f1, Lx)
         return
     end
 
-    of1 = on(f1, Lx)
-    of2 = on(f2, Ly)
+    function of1(watch)
+        watch === on_x && return
+        if watch
+            on(f1, Lx)
+            on_x = true
+        else
+            on_x = !off(Lx, f1)
+        end
+        return
+    end
+
+    function of2(watch)
+        watch === on_y && return
+        if watch
+            on(f2, Ly)
+            on_y = true
+        else
+            on_y = !off(Ly, f2)
+        end
+        return
+    end
+
+    on_x = on_y = false
+    of1(true); of2(true)
 
     # set lock toggle
     arlock = Toggle(fig[3,3])
@@ -207,6 +231,8 @@ function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
         if !sliderx.dragging[] && !slidery.dragging[]
             refresh()
             info()
+            of1(true)
+            of2(true)
         end
         return
     end
@@ -232,17 +258,14 @@ function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
         Lx0, Ly0 = x02 - x01, y02 - y01
 
         # set
-        off(of1)
-        off(of2)
+        of1(false)
+        of2(false)
         xc[] = x01 + div(Lx0, 2)
         yc[] = y01 + div(Ly0, 2)
         set_close_to!(sliderx, Lx0)
         set_close_to!(slidery, Ly0)
         AR = Lx[] / Ly[]
-        refresh()
-        of1 = on(f1, Lx)
-        of2 = on(f2, Ly)
-        info()
+        update()
     end
 
     # fft save button
