@@ -225,8 +225,7 @@ function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
         return
     end
 
-    on(_ -> live.active[] && refresh(), Svlt)
-
+    # slider release updates on-demand
     function update()
         if !sliderx.dragging[] && !slidery.dragging[]
             refresh()
@@ -236,6 +235,9 @@ function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
         end
         return
     end
+
+    # dynamic live updating
+    on(_ -> live.active[] && refresh(), Svlt)
 
     on(live.active) do active
         if active
