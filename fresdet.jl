@@ -186,8 +186,7 @@ function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
     # selection observables
     Sv = lift((x, y) -> vec(@view S[x[1]+1:x[2], y[1]+1:y[2]]), x, y;
               ignore_equal_values = true)
-    n, s6 = stats(Sv[])
-    n = Observable(n)
+    n, s6 = Observable.(stats(Sv[]))
     Svs = Observable(Sv[])
     Svlt = async_latest(Sv)
 
@@ -212,7 +211,7 @@ function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
     # interval change callback for related histogram attributes
     function refresh()
         Svs[] = Sv[]
-        n[], legend.entrygroups[][1][2][1].label[] = stats(Sv[])
+        n[], s6[] = stats(Sv[])
         Haxis.title[] = "$(Lx[]) x $(Ly[]) pixels"
         reset_limits!(Haxis)
         return
