@@ -207,8 +207,6 @@ function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
     # abuse the legend since it's easier than making a custom text! box
     legend = axislegend(Haxis, [MarkerElement(marker = '!', color = :transparent)],
                         [s6], titlesize = t, labelsize = t, position = :rc)
-    xlims!(Haxis, 0, 255)
-    ylims!(Haxis, low = 0)
 
     # interval change callback for related histogram attributes
     function refresh()
