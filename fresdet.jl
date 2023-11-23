@@ -1,6 +1,6 @@
 # fresdet.jl
-# Version 0.10.3
-# 2023-11-6
+# Version 0.11.0
+# 2023-11-23
 # https://github.com/Sagnac/fresdet
 
 # Simple analysis tool for estimating the original resolution
