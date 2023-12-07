@@ -8,7 +8,7 @@ Simple analysis tool for estimating the original resolution of standard upscaled
 
 ## Caveats
 
-Note that the fft will not definitively tell you whether an image has been upscaled; only under the assumption that it has been can you use it to estimate by how much. In general spectral evaluation can be used to assess the relative amount of detail present in an image and there are various reasons why a spectrum can be limited. Namely, the image could simply be inherently low resolution lacking in fine detail, or it could have been manipulated and processed in various ways. For instance, the application of a low pass filter like a Gaussian blur will attenuate the high frequency amplitudes without changing the image size; in that case, if you know that only that filter has been applied you could possibly estimate the radius or variance parameters.
+Note that the fft will not definitively tell you whether an image has been upscaled; only under the assumption that it has been can you use it to estimate by how much. In general spectral evaluation can be used to assess the relative amount of detail present in an image and there are various reasons why a spectrum can be limited. Namely, the image could simply be inherently low resolution lacking in fine detail, or it could have been manipulated and processed in various ways. For instance, the application of a low pass filter like a Gaussian blur will attenuate the high frequency amplitudes without changing the image size; in that case, if you know only that filter has been applied you could possibly estimate the radius or variance parameters.
 
 Upsampling with standard interpolation algorithms which convolve the image with a specific kernel can sometimes trace distinctive features in the Fourier transform, but concluding that this operation took place usually requires closer inspection and knowledge of how the various kernels behave. Since upscaling in this manner is essentially low pass filtering after zero insertion it can be tricky discerning the difference between this and other low pass operations; if a variety of operations have been performed on the image then it becomes increasingly difficult to know which ones as well as estimate the magnitude of each.
 
@@ -27,7 +27,7 @@ GLMakie
 ```
 
 You can run the program from the Julia REPL:
-```
+```julia
 include("fresdet.jl")
 figure = fresdet("image.png")
 ```
@@ -42,7 +42,7 @@ julia fresdet.jl image.png
 If you don't want to wait for the packages to load (Julia is a JIT compiled language so loading some packages like GLMakie can be slow) or the first plot latency you can create a custom sysimage with the PackageCompiler.jl package which will precompile all of the necessary functions and speed things up. A precompilation script is provided in [precompile.jl](precompile/precompile.jl). Note that this sysimage can be quite large in size, but at the moment there isn't a way to provide a small relocatable binary of the program which works across all operating systems.
 
 Note that while this is not currently a package you can make sure you have the right versions of the dependencies by cloning the repository and then from the root directory activating the project and instantiating its environment in Julia:
-```
+```julia
 using Pkg
 Pkg.activate(".")
 Pkg.instantiate()
@@ -61,6 +61,8 @@ The figure contains several elements you can interact with:
 * Clicking on the `Center` button will center the rectangle;
 * Enabling `Lock AR` maintains the rectangle's aspect ratio as you move the sliders;
 * The `Live` toggle will enable live dynamic updating of the histogram;
-* The `Update` button will update the histogram on demand;
-* Calling `save("filename.png", figure)` will save the figure in its current state;
 * The `Save FFT` button saves the fft without the axis in its original size as `FFT.png` in your current working directory.
+
+Additionally:
+* The `res` and `textsize` keyword arguments control the plot size (DPI scaled window resolution, as a tuple) and the font size, respectively; e.g. `fresdet("image.png"; res = (800, 400), textsize = 15)`;
+* Calling `save("filename.png", figure)` will save the figure in its current state.

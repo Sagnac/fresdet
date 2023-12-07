@@ -1,6 +1,6 @@
 # fresdet.jl
-# Version 0.10.3
-# 2023-11-6
+# Version 0.11.0
+# 2023-11-23
 # https://github.com/Sagnac/fresdet
 
 # Simple analysis tool for estimating the original resolution
@@ -11,7 +11,8 @@ using FFTW
 using StatsBase
 using Printf
 using GLMakie
-using GLMakie: GLFW.GetPrimaryMonitor, MonitorProperties
+using GLMakie: GLFW.GetPrimaryMonitor, GLFW.GetMonitorContentScale,
+               MonitorProperties, activate!
 using .Makie: Axis, async_latest
 
 function fftimage(file)
@@ -39,18 +40,22 @@ function stats(v)
     n, replace(s6, "-" => "\u2212")
 end
 
-function fresdet(file; script = !isinteractive())
+function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
 
     S = fftimage(file)
     w, h = size(S)
-    monitor_properties = MonitorProperties(GetPrimaryMonitor())
-    (; height) = monitor_properties.videomode
-    res = (height, height/2)
-    t = 0.1 * monitor_properties.dpi[1] # text size
+    monitor = GetPrimaryMonitor()
+    monitor_properties = MonitorProperties(monitor)
+    dpi_scale = mean(GetMonitorContentScale(monitor))
+    if res == :auto
+        (; height) = monitor_properties.videomode
+        res = (height, height/2) ./ dpi_scale
+    end
+    t = textsize == :auto ? 0.1 * monitor_properties.dpi[1] / dpi_scale : textsize
     t2 = 0.76t # smaller text size used for some of the outer widgets
-    fig = Figure(resolution = res)
+    fig = Figure(size = res)
 
-    local of1, of2, ov, AR
+    local AR
 
     # sliders
     xc = Observable(div(w, 2))
@@ -97,25 +102,52 @@ function fresdet(file; script = !isinteractive())
     on(centre.clicks) do _
         xc[] = div(w, 2)
         yc[] = div(h, 2)
-        Svs[] = Sv[]
         refresh()
-        nothing
     end
 
     # slider callback functions under lock
     function f1(x)
-        off(of2)
-        set_close_to!(slidery, round(Int, Lx[] / AR[]))
-        of2 = on(f2, Ly)
+        if arlock.active[]
+            of2(false)
+            set_close_to!(slidery, round(Int, Lx[] / AR))
+        end
+        update()
         return
     end
 
     function f2(y)
-        off(of1)
-        set_close_to!(sliderx, round(Int, Ly[] * AR[]))
-        of1 = on(f1, Lx)
+        if arlock.active[]
+            of1(false)
+            set_close_to!(sliderx, round(Int, Ly[] * AR))
+        end
+        update()
         return
     end
+
+    function of1(watch)
+        watch === on_x && return
+        if watch
+            on(f1, Lx)
+            on_x = true
+        else
+            on_x = !off(Lx, f1)
+        end
+        return
+    end
+
+    function of2(watch)
+        watch === on_y && return
+        if watch
+            on(f2, Ly)
+            on_y = true
+        else
+            on_y = !off(Ly, f2)
+        end
+        return
+    end
+
+    on_x = on_y = false
+    of1(true); of2(true)
 
     # set lock toggle
     arlock = Toggle(fig[3,3])
@@ -125,11 +157,6 @@ function fresdet(file; script = !isinteractive())
     on(arlock.active) do active
         if active
             AR = Lx[] / Ly[]
-            of1 = on(f1, Lx)
-            of2 = on(f2, Ly)
-        else
-            off(of1)
-            off(of2)
         end
         nothing
     end
@@ -147,20 +174,19 @@ function fresdet(file; script = !isinteractive())
     image!(fftaxis, S, colormap = :tokyo, interpolate = false,
            inspector_label = image_inspector)
     rect = select_rectangle(fftaxis)
-    DataInspector(fig)
+    DataInspector(fig; fontsize = t2)
 
     # draw rectangle
     selection = lift((x, y, Lx, Ly) -> (x[1], y[1], Lx, Ly), x, y, Lx, Ly;
                      ignore_equal_values = true)
     r4 = @lift(Rect($selection...))
     R = lines!(fftaxis, r4, linestyle = :dot, inspectable = false,
-               color = RGBf(0, 1, 0.38), linewidth = 7)
+               color = RGBf(0, 1, 0.38), linewidth = 7 / dpi_scale)
 
     # selection observables
     Sv = lift((x, y) -> vec(@view S[x[1]+1:x[2], y[1]+1:y[2]]), x, y;
               ignore_equal_values = true)
-    n, s6 = stats(Sv[])
-    n = Observable(n)
+    n, s6 = Observable.(stats(Sv[]))
     Svs = Observable(Sv[])
     Svlt = async_latest(Sv)
 
@@ -170,10 +196,7 @@ function fresdet(file; script = !isinteractive())
     HGrid[1,1] = Label(fig, "")
     HGrid[2,1] = Label(fig, "Live", fontsize = t)
     HGrid[2,2] = live = Toggle(fig)
-    HGrid[3,1] = Label(fig, @lift($(live.active) || $Svs == $Sv ? "\u2713" : ""),
-                       fontsize = 2t)
-    HGrid[3,2] = update = Button(fig, label = "Update", fontsize = t)
-    HGrid[3,3] = Label(fig, "")
+    HGrid[2,3] = Label(fig, "")
 
     # set the histogram
     Haxis = Axis(fig[1,1], title = "$w x $h pixels", titlesize = t,
@@ -186,8 +209,9 @@ function fresdet(file; script = !isinteractive())
                         [s6], titlesize = t, labelsize = t, position = :rc)
 
     # interval change callback for related histogram attributes
-    function refresh(Svlt = Sv[])
-        n[], legend.entrygroups[][1][2][1].label[] = stats(Svlt)
+    function refresh()
+        Svs[] = Sv[]
+        n[], s6[] = stats(Sv[])
         Haxis.title[] = "$(Lx[]) x $(Ly[]) pixels"
         reset_limits!(Haxis)
         return
@@ -200,27 +224,27 @@ function fresdet(file; script = !isinteractive())
         return
     end
 
-    # histogram callbacks
-    on(update.clicks) do _
-        Svs[] = Sv[]
-        refresh()
-        info()
-        nothing
+    # slider release updates on-demand
+    function update()
+        if !sliderx.dragging[] && !slidery.dragging[]
+            refresh()
+            info()
+            of1(true)
+            of2(true)
+        end
+        return
     end
 
+    # dynamic live updating
+    on(_ -> live.active[] && refresh(), Svlt)
+
     on(live.active) do active
-        delete!(Haxis, H)
         if active
-            H = hist!(Haxis, Svlt, bins = n, color = RGBf(0, 0.8, 0.3),
-                      inspector_label = histogram_inspector)
-            ov = on(refresh, Svlt)
+            H.color = RGBf(0, 0.8, 0.3)
         else
-            off(ov)
-            H = hist!(Haxis, Svs, bins = n, color = RGBf(0, 0.5, 0.8),
-                      inspector_label = histogram_inspector)
-            Svs[] = Sv[]
+            H.color = RGBf(0, 0.5, 0.8)
         end
-        refresh()
+        nothing
     end
 
     # rectangle selection callback
@@ -235,20 +259,14 @@ function fresdet(file; script = !isinteractive())
         Lx0, Ly0 = x02 - x01, y02 - y01
 
         # set
-        arlock.active[] && off(of1) && off(of2)
+        of1(false)
+        of2(false)
         xc[] = x01 + div(Lx0, 2)
         yc[] = y01 + div(Ly0, 2)
         set_close_to!(sliderx, Lx0)
         set_close_to!(slidery, Ly0)
         AR = Lx[] / Ly[]
-        Svs[] = Sv[]
-        refresh()
-        if arlock.active[]
-            of1 = on(f1, Lx)
-            of2 = on(f2, Ly)
-        end
-        info()
-        nothing
+        update()
     end
 
     # fft save button
@@ -257,11 +275,10 @@ function fresdet(file; script = !isinteractive())
     on(savefft.clicks) do _
         save("FFT.png", clamp01nan!(rotl90(S / 255)))
         println("FFT saved as FFT.png in the present working directory.\n")
-        nothing
     end
 
     # render
-    set_window_config!(title = "fresdet", focus_on_show = true)
+    activate!(title = "fresdet", focus_on_show = true)
     screen = display(fig)
 
     script && wait(screen)
