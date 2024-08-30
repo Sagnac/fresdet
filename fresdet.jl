@@ -20,7 +20,7 @@ function fftimage(file)
     image = image .|> Gray .|> Float64
     F2 = image |> fft |> fftshift .|> abs2
     map!(x -> log(x + 1), F2, F2)
-    F2 * 255 / maximum(F2) .|> round
+    F2 * (255 / maximum(F2)) .|> round
 end
 
 function stats(v)
