@@ -19,7 +19,7 @@ function fftimage(file)
     image = file |> load |> rotr90
     image = image .|> Gray .|> Float64
     F2 = image |> fft |> fftshift .|> abs2
-    map!(x -> log(x + 1), F2, F2)
+    map!(log1p, F2, F2)
     F2 * (255 / maximum(F2)) .|> round
 end
 
