@@ -11,7 +11,12 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
-FFTW = "1.7.1"
-GLMakie = "0.9.0"
+FFTW = "1.8.0"
+GLMakie = "=0.9.6"
 Images = "0.26.0"
 StatsBase = "0.34.0"
+
+# [sources.GLMakie]
+# url = "https://github.com/Sagnac/Makie.jl"
+# rev = "sliders"
+# subdir = "GLMakie"
