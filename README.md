@@ -26,16 +26,16 @@ StatsBase
 GLMakie
 ```
 
-This script depends on a specific GLMakie fork which you can install with:
-```julia
-Pkg.add(url="https://github.com/Sagnac/Makie.jl", rev="sliders", subdir="GLMakie")
-```
-
-Note that while this is not currently a package you can make sure you have the right versions of the dependencies by cloning the repository and then from the root directory activating the project and instantiating its environment in Julia:
+Note that while this is currently not a package you can make sure you have the right versions of the dependencies by cloning the repository and then from the root directory activating the project and instantiating its environment in Julia:
 ```julia
 using Pkg
 Pkg.activate(".")
 Pkg.instantiate()
+```
+
+Alternatively, if you wish to install the packages separately, you can install the specific Makie fork this script depends on with:
+```julia
+Pkg.add(url="https://github.com/Sagnac/Makie.jl", rev="sliders")
 ```
 
 You can run the program from the Julia REPL:
