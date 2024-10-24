@@ -1,5 +1,5 @@
 # fresdet.jl
-# Version 0.11.1
+# Version 0.11.2
 # 2024-10-24
 # https://github.com/Sagnac/fresdet
 
