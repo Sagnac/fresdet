@@ -23,8 +23,12 @@ function fftimage(file)
     F2 * (255 / maximum(F2)) .|> round
 end
 
+function bin(v)
+    x = range(extrema(v)...)
+    x, [count(==(i), v) for i in x]
+end
+
 function stats(v)
-    n::Int = maximum(v) - minimum(v) + 1
     c = [f(v) for f in (mean, median, mode, std, skewness, kurtosis)]
     s6 = @sprintf(
              """
@@ -37,7 +41,7 @@ function stats(v)
              """,
              c...
          )
-    n, replace(s6, "-" => "\u2212")
+    replace(s6, "-" => "\u2212")
 end
 
 function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
@@ -186,8 +190,8 @@ function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
     # selection observables
     Sv = lift((x, y) -> vec(@view S[x[1]+1:x[2], y[1]+1:y[2]]), x, y;
               ignore_equal_values = true)
-    n, s6 = Observable.(stats(Sv[]))
-    Svs = Observable(Sv[])
+    s6 = Observable(stats(Sv[]))
+    Svsx, Svs = Observable.(bin(Sv[]))
     Svlt = async_latest(Sv)
 
     # add interactive elements to histogram
@@ -202,7 +206,7 @@ function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
     Haxis = Axis(fig[1,1], title = "$w x $h pixels", titlesize = t,
                  xlabel = "pixel value [0-255]", ylabel = "pixel count")
     deregister_interaction!(Haxis, :rectanglezoom)
-    H = hist!(Haxis, Svs, bins = n, color = RGBf(0, 0.5, 0.8),
+    H = barplot!(Haxis, Svsx, Svs, gap = 0.0, color = RGBf(0, 0.5, 0.8),
               inspector_label = histogram_inspector)
     # abuse the legend since it's easier than making a custom text! box
     legend = axislegend(Haxis, [MarkerElement(marker = '!', color = :transparent)],
@@ -210,8 +214,8 @@ function fresdet(file; script = !isinteractive(), res = :auto, textsize = :auto)
 
     # interval change callback for related histogram attributes
     function refresh()
-        Svs[] = Sv[]
-        n[], s6[] = stats(Sv[])
+        Svsx.val, Svs[] = bin(Sv[])
+        s6[] = stats(Sv[])
         Haxis.title[] = "$(Lx[]) x $(Ly[]) pixels"
         reset_limits!(Haxis)
         return
